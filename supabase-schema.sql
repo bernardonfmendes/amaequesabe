@@ -34,3 +34,6 @@ insert into public.allowed_emails (email) values
   ('bernardo.n.f.mendes@gmail.com'),
   ('paulanevesramalho@gmail.com')
 on conflict do nothing;
+
+-- 5) Segurança: a função rls_auto_enable() não é para a API (não tem triggers ligados).
+revoke execute on function public.rls_auto_enable() from public, anon, authenticated;
