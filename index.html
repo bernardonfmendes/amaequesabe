@@ -373,6 +373,9 @@ body.gated .tabs, body.gated .ctx, body.gated #sync{display:none}
   .btn:active{transform:none}
 }
 </style>
+<style>
+  .top-acts { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+</style>
 </head>
 <body>
 
@@ -392,7 +395,10 @@ body.gated .tabs, body.gated .ctx, body.gated #sync{display:none}
         <p class="brand-sub">receitas, semana e compras</p>
       </div>
     </div>
-    <span id="sync" class="sync" aria-live="polite"></span>
+    <div class="top-acts">
+      <span id="sync" class="sync" aria-live="polite"></span>
+      <button type="button" id="appRefresh" class="linkbtn" aria-label="Atualizar a app para a versão mais recente">↻ Atualizar app</button>
+    </div>
   </header>
 
   <section class="ctx" aria-label="Definições da semana">
@@ -443,7 +449,27 @@ body.gated .tabs, body.gated .ctx, body.gated #sync{display:none}
 </div>
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=3"></script>
-<script src="app.bundle.js?v=3"></script>
+<script>
+  /* Atualiza a app mesmo quando o telemóvel (Safari, app no ecrã principal) guarda uma versão antiga:
+     volta a pedir ao servidor a página e os scripts, e depois recarrega. */
+  (function(){
+    var btn = document.getElementById('appRefresh');
+    if (!btn) return;
+    btn.addEventListener('click', function(){
+      btn.disabled = true; btn.textContent = 'A atualizar…';
+      var urls = Array.prototype.map.call(document.querySelectorAll('script[src]'), function(s){ return s.src; });
+      urls.push(location.href.split('?')[0]);
+      Promise.all(urls.map(function(u){
+        return fetch(u, { cache: 'reload' }).catch(function(){ return null; });
+      })).then(function(){
+        location.replace(location.pathname + '?atualizado=' + Date.now());
+      }, function(){
+        location.reload();
+      });
+    });
+  })();
+</script>
+<script src="config.js?v=4"></script>
+<script src="app.bundle.js?v=4"></script>
 </body>
 </html>
