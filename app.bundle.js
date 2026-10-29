@@ -1725,7 +1725,7 @@ function viewSemana(){
   h += '<div class="stack" style="gap:6px"><span class="lbl" style="margin:0">Sugerir receitas</span>' + tierChips('tier-set', S.tier) + '</div>';
   h += '<div class="row wrap"><button type="button" class="btn pri" data-act="suggest">' +
        (UI.sug ? 'Toca outra vez para refazer a semana' : (sm.total && sm.count >= sm.total ? 'Refazer semana' : 'Sugerir semana')) + '</button>' +
-       '<button type="button" class="btn" data-act="ai-plan"' + (IA_PLAN.busy ? ' disabled' : '') + '>' + (IA_PLAN.busy ? 'A IA está a planear…' : 'Planear com IA') + '</button>' +
+       '<button type="button" class="btn" data-act="ai-plan"' + (IA_PLAN.busy ? ' disabled' : '') + '>' + (IA_PLAN.busy ? 'A IA está a planear…' : (IA_PLAN.confirmar ? 'Toca outra vez para refazer com IA' : 'Planear com IA')) + '</button>' +
        '<button type="button" class="btn" data-act="clear-week">Limpar semana</button></div>' +
        (IA_PLAN.nota ? '<p class="note">IA: ' + esc(IA_PLAN.nota) + '</p>' : '');
   var acc = weekAccepted(S);
@@ -2411,6 +2411,7 @@ function sheetLogin(){
 
 /* ---------- planeamento com IA (só preenche refeições vazias; o planeador normal fecha o que sobrar) ---------- */
 var IA_PLAN = {busy: false, nota: ''};
+var IA_PLAN_T = null;
 function planearSemanaIA(){
   if (!SB || !SESSION){ toast('Entra na casa para usar a IA.'); return; }
   if (IA_PLAN.busy) return;
@@ -2422,7 +2423,20 @@ function planearSemanaIA(){
     });
   });
   var vazias = keys.filter(function(x){ return !(S.plan[x.k] && recById(S, S.plan[x.k])); });
-  if (!vazias.length){ toast('A semana já está cheia. Limpa uma refeição para a IA a preencher.'); return; }
+  if (!vazias.length){
+    /* semana cheia: a de exemplo refaz-se logo; a tua pede uma segunda toque, como "Sugerir semana" */
+    if (!S.example && !IA_PLAN.confirmar){
+      IA_PLAN = {busy: false, nota: '', confirmar: true};
+      clearTimeout(IA_PLAN_T);
+      IA_PLAN_T = setTimeout(function(){ if (IA_PLAN.confirmar){ IA_PLAN.confirmar = false; if (VIEW === 'semana' && !SH) render(); } }, 4000);
+      render();
+      toast('Toca outra vez para a IA refazer toda a semana.');
+      return;
+    }
+    S.plan = {};
+    vazias = keys;
+  }
+  IA_PLAN_T && clearTimeout(IA_PLAN_T);
   var gasto = planSummary(S).cost;
   var restante = S.budget > 0 ? S.budget - gasto : 100000;
   if (restante <= 0){ toast('Já não há orçamento para planear mais refeições.'); return; }
