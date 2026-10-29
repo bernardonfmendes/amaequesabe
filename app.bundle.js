@@ -2412,9 +2412,15 @@ function sheetLogin(){
 /* ---------- planeamento com IA (só preenche refeições vazias; o planeador normal fecha o que sobrar) ---------- */
 var IA_PLAN = {busy: false, nota: ''};
 var IA_PLAN_T = null;
+var IA_ULTIMO = [];   /* receitas da última semana planeada com IA: a próxima tenta não as repetir */
+function baralhar(a){ a = a.slice(); for (var i = a.length - 1; i > 0; i--){ var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
 function planearSemanaIA(){
   if (!SB || !SESSION){ toast('Entra na casa para usar a IA.'); return; }
   if (IA_PLAN.busy) return;
+  var anteriores = {};
+  Object.keys(S.plan).forEach(function(k){ if (S.plan[k]) anteriores[S.plan[k]] = true; });
+  IA_ULTIMO.forEach(function(id){ anteriores[id] = true; });
+  var listaAnteriores = Object.keys(anteriores).slice(0, 300);
   var keys = [];
   DAYS.forEach(function(d){
     activeSlots(S).forEach(function(s){
@@ -2444,19 +2450,22 @@ function planearSemanaIA(){
   var usadas = {};
   var refeicoes = vazias.map(function(x){
     var pool = S.recipes.filter(function(r){ return x.soup ? soupAccepts(r) : slotAccepts(x.s, r); });
+    var novas = pool.filter(function(r){ return !anteriores[r.id]; });
+    if (novas.length) pool = novas;
+    pool = baralhar(pool);
     pool.forEach(function(r){ usadas[r.id] = r; });
     return {chave: x.k, dia: x.dia, refeicao: x.refeicao, opcoes: pool.map(function(r){ return r.id; })};
   }).filter(function(x){ return x.opcoes.length > 0; });
-  var receitas = Object.keys(usadas).map(function(id){
+  var receitas = baralhar(Object.keys(usadas).map(function(id){
     var r = usadas[id];
     return {id: id, nome: r.nome, cat: r.cat, custo: round2(recipeCalc(r, S, S.store, S.people).total), grupo: mainGroup(r)};
-  });
+  }));
   if (!refeicoes.length){ toast('Não há receitas que encaixem nas refeições vazias.'); return; }
 
   IA_PLAN = {busy: true, nota: ''};
   toast('A pedir a IA a semana… pode demorar uns segundos.');
   render();
-  comLimite(SB.functions.invoke('planear-semana', {body: {orcamentoRestante: round2(restante), refeicoes: refeicoes, receitas: receitas, pedido: ''}}), 90000, 'a IA demorou demasiado a responder')
+  comLimite(SB.functions.invoke('planear-semana', {body: {orcamentoRestante: round2(restante), refeicoes: refeicoes, receitas: receitas, pedido: '', anteriores: listaAnteriores}}), 90000, 'a IA demorou demasiado a responder')
     .then(function(res){
       if (!res.error){
         if (!res.data || !res.data.plano) throw new Error('a IA devolveu uma resposta vazia');
@@ -2477,6 +2486,7 @@ function planearSemanaIA(){
       var st2 = Object.assign({}, S, {plan: plan});
       S.plan = suggestWeek(st2);
       S.example = false;
+      IA_ULTIMO = Object.keys(d.plano).map(function(k){ return d.plano[k]; });
       IA_PLAN = {busy: false, nota: d.nota || ''};
       persist(); render();
       toast('Semana planeada com IA: ' + eur(planSummary(S).cost) + ' de ' + eur(S.budget));

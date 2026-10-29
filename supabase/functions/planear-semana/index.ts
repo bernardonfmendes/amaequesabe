@@ -22,6 +22,7 @@ Regras:
 - O custo total das escolhas (campo "custo" de cada receita, já para as pessoas da casa) tem de caber em "orcamentoRestante" (euros). Se o orçamento apertar, prefere receitas baratas.
 - Varia: a mesma receita no máximo 2 vezes na semana; não repitas a mesma proteína principal ("grupo") em dias seguidos.
 - Limites da semana: no máximo 2 refeições com grupo "verm" (carne vermelha) e 1 com grupo "proc" (charcutaria).
+- Se "anteriores" tiver ids, são receitas da semana anterior: evita-as sempre que houver alternativa. Quero uma semana DIFERENTE da anterior, com variedade de pratos e de proteínas.
 - Se "pedido" tiver texto, respeita-o na medida do possível.
 - Responde SÓ JSON: {"plano": {"<chave da refeição>": "<id da receita>"}, "nota": "frase curta em português sobre a lógica da semana (máx. 200 caracteres)"}.`;
 
@@ -78,6 +79,7 @@ Deno.serve(async (req) => {
   const texto = PROMPT + "\n\n" + JSON.stringify({
     orcamentoRestante: restante,
     pedido,
+    anteriores: (Array.isArray(corpo.anteriores) ? corpo.anteriores : []).map(String).slice(0, 300),
     refeicoes: refeicoes.map((x) => ({ chave: x.chave, dia: x.dia, refeicao: x.refeicao, opcoes: x.opcoes })),
     receitas: [...usadas].map((id) => porId.get(id)),
   });
@@ -89,7 +91,7 @@ Deno.serve(async (req) => {
       headers: { "Content-Type": "application/json", "x-goog-api-key": chave },
       body: JSON.stringify({
         contents: [{ parts: [{ text: texto }] }],
-        generationConfig: { responseMimeType: "application/json", temperature: 0.9 },
+        generationConfig: { responseMimeType: "application/json", temperature: 1.0 },
       }),
     });
     if (resp.ok || ![429, 500, 503].includes(resp.status)) break;
