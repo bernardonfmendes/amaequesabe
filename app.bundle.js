@@ -2440,6 +2440,7 @@ function planearSemanaIA(){
   if (!refeicoes.length){ toast('Não há receitas que encaixem nas refeições vazias.'); return; }
 
   IA_PLAN = {busy: true, nota: ''};
+  toast('A pedir a IA a semana… pode demorar uns segundos.');
   render();
   comLimite(SB.functions.invoke('planear-semana', {body: {orcamentoRestante: round2(restante), refeicoes: refeicoes, receitas: receitas, pedido: ''}}), 90000, 'a IA demorou demasiado a responder')
     .then(function(res){
