@@ -945,73 +945,6 @@ function suggestWeek(st, rng){
   return plan;
 }
 
-/* ---------- planeamento com IA (só preenche refeições vazias; o planeador normal fecha o que sobrar) ---------- */
-var IA_PLAN = {busy: false, nota: ''};
-function planearSemanaIA(){
-  if (!SB || !SESSION){ toast('Entra na casa para usar a IA.'); return; }
-  if (IA_PLAN.busy) return;
-  var keys = [];
-  DAYS.forEach(function(d){
-    activeSlots(S).forEach(function(s){
-      keys.push({k: planKey(d.id, s.id), dia: d.nome, refeicao: s.nome, s: s.id, soup: false});
-      if (soupOn(S, s.id)) keys.push({k: soupKey(d.id, s.id), dia: d.nome, refeicao: s.nome + ' (sopa)', s: s.id, soup: true});
-    });
-  });
-  var vazias = keys.filter(function(x){ return !(S.plan[x.k] && recById(S, S.plan[x.k])); });
-  if (!vazias.length){ toast('A semana já está cheia. Limpa uma refeição para a IA a preencher.'); return; }
-  var gasto = planSummary(S).cost;
-  var restante = S.budget > 0 ? S.budget - gasto : 100000;
-  if (restante <= 0){ toast('Já não há orçamento para planear mais refeições.'); return; }
-
-  var usadas = {};
-  var refeicoes = vazias.map(function(x){
-    var pool = S.recipes.filter(function(r){ return x.soup ? soupAccepts(r) : slotAccepts(x.s, r); });
-    pool.forEach(function(r){ usadas[r.id] = r; });
-    return {chave: x.k, dia: x.dia, refeicao: x.refeicao, opcoes: pool.map(function(r){ return r.id; })};
-  }).filter(function(x){ return x.opcoes.length > 0; });
-  var receitas = Object.keys(usadas).map(function(id){
-    var r = usadas[id];
-    return {id: id, nome: r.nome, cat: r.cat, custo: round2(recipeCalc(r, S, S.store, S.people).total), grupo: mainGroup(r)};
-  });
-  if (!refeicoes.length){ toast('Não há receitas que encaixem nas refeições vazias.'); return; }
-
-  IA_PLAN = {busy: true, nota: ''};
-  render();
-  comLimite(SB.functions.invoke('planear-semana', {body: {orcamentoRestante: round2(restante), refeicoes: refeicoes, receitas: receitas, pedido: ''}}), 90000, 'a IA demorou demasiado a responder')
-    .then(function(res){
-      if (!res.error){
-        if (!res.data || !res.data.plano) throw new Error('a IA devolveu uma resposta vazia');
-        return res.data;
-      }
-      var ctx = res.error.context;
-      return Promise.resolve(ctx && ctx.json ? ctx.json().catch(function(){ return {}; }) : {}).then(function(j){
-        var e = new Error(j.erro || res.error.message || 'erro');
-        e.status = ctx && ctx.status;
-        throw e;
-      });
-    })
-    .then(function(d){
-      /* as escolhas da IA entram primeiro; o planeador normal preenche o que sobrar, com as suas regras */
-      var plan = {};
-      Object.keys(S.plan).forEach(function(k){ plan[k] = S.plan[k]; });
-      Object.keys(d.plano).forEach(function(k){ plan[k] = d.plano[k]; });
-      var st2 = Object.assign({}, S, {plan: plan});
-      S.plan = suggestWeek(st2);
-      S.example = false;
-      IA_PLAN = {busy: false, nota: d.nota || ''};
-      persist(); render();
-      toast('Semana planeada com IA: ' + eur(planSummary(S).cost) + ' de ' + eur(S.budget));
-    })
-    .catch(function(e){
-      /* sem IA: usa o planeador normal, que já existia */
-      S.plan = suggestWeek(S);
-      S.example = false;
-      IA_PLAN = {busy: false, nota: ''};
-      persist(); render();
-      toast('IA indisponível (' + motivoIA(e) + '). Usei o planeador normal.');
-    });
-}
-
 /* ---------- lista de compras ---------- */
 /* junta as quantidades da semana e arredonda para cima: embalagens inteiras,
    ou o menor peso que se vende, nos produtos vendidos ao peso */
@@ -2474,6 +2407,73 @@ function sheetLogin(){
   h += '</div>';
   h += '<p class="note">Sem ligar, a app guarda tudo só neste dispositivo.</p>';
   return {title: SESSION && !PASS_RECOVERY ? 'Casa e dados' : 'Partilhar com a casa', html: h};
+}
+
+/* ---------- planeamento com IA (só preenche refeições vazias; o planeador normal fecha o que sobrar) ---------- */
+var IA_PLAN = {busy: false, nota: ''};
+function planearSemanaIA(){
+  if (!SB || !SESSION){ toast('Entra na casa para usar a IA.'); return; }
+  if (IA_PLAN.busy) return;
+  var keys = [];
+  DAYS.forEach(function(d){
+    activeSlots(S).forEach(function(s){
+      keys.push({k: planKey(d.id, s.id), dia: d.nome, refeicao: s.nome, s: s.id, soup: false});
+      if (soupOn(S, s.id)) keys.push({k: soupKey(d.id, s.id), dia: d.nome, refeicao: s.nome + ' (sopa)', s: s.id, soup: true});
+    });
+  });
+  var vazias = keys.filter(function(x){ return !(S.plan[x.k] && recById(S, S.plan[x.k])); });
+  if (!vazias.length){ toast('A semana já está cheia. Limpa uma refeição para a IA a preencher.'); return; }
+  var gasto = planSummary(S).cost;
+  var restante = S.budget > 0 ? S.budget - gasto : 100000;
+  if (restante <= 0){ toast('Já não há orçamento para planear mais refeições.'); return; }
+
+  var usadas = {};
+  var refeicoes = vazias.map(function(x){
+    var pool = S.recipes.filter(function(r){ return x.soup ? soupAccepts(r) : slotAccepts(x.s, r); });
+    pool.forEach(function(r){ usadas[r.id] = r; });
+    return {chave: x.k, dia: x.dia, refeicao: x.refeicao, opcoes: pool.map(function(r){ return r.id; })};
+  }).filter(function(x){ return x.opcoes.length > 0; });
+  var receitas = Object.keys(usadas).map(function(id){
+    var r = usadas[id];
+    return {id: id, nome: r.nome, cat: r.cat, custo: round2(recipeCalc(r, S, S.store, S.people).total), grupo: mainGroup(r)};
+  });
+  if (!refeicoes.length){ toast('Não há receitas que encaixem nas refeições vazias.'); return; }
+
+  IA_PLAN = {busy: true, nota: ''};
+  render();
+  comLimite(SB.functions.invoke('planear-semana', {body: {orcamentoRestante: round2(restante), refeicoes: refeicoes, receitas: receitas, pedido: ''}}), 90000, 'a IA demorou demasiado a responder')
+    .then(function(res){
+      if (!res.error){
+        if (!res.data || !res.data.plano) throw new Error('a IA devolveu uma resposta vazia');
+        return res.data;
+      }
+      var ctx = res.error.context;
+      return Promise.resolve(ctx && ctx.json ? ctx.json().catch(function(){ return {}; }) : {}).then(function(j){
+        var e = new Error(j.erro || res.error.message || 'erro');
+        e.status = ctx && ctx.status;
+        throw e;
+      });
+    })
+    .then(function(d){
+      /* as escolhas da IA entram primeiro; o planeador normal preenche o que sobrar, com as suas regras */
+      var plan = {};
+      Object.keys(S.plan).forEach(function(k){ plan[k] = S.plan[k]; });
+      Object.keys(d.plano).forEach(function(k){ plan[k] = d.plano[k]; });
+      var st2 = Object.assign({}, S, {plan: plan});
+      S.plan = suggestWeek(st2);
+      S.example = false;
+      IA_PLAN = {busy: false, nota: d.nota || ''};
+      persist(); render();
+      toast('Semana planeada com IA: ' + eur(planSummary(S).cost) + ' de ' + eur(S.budget));
+    })
+    .catch(function(e){
+      /* sem IA: usa o planeador normal, que já existia */
+      S.plan = suggestWeek(S);
+      S.example = false;
+      IA_PLAN = {busy: false, nota: ''};
+      persist(); render();
+      toast('IA indisponível (' + motivoIA(e) + '). Usei o planeador normal.');
+    });
 }
 
 var SHEETS = {picker: sheetPicker, recipe: sheetRecipe, editor: sheetEditor, newing: sheetNewIng, scan: sheetScan, login: sheetLogin, fatura: sheetFatura, aiRecipe: sheetAiRecipe};
