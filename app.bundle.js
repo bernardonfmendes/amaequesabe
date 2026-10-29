@@ -36,17 +36,17 @@ var RECIPE_CATS = [
 /* u: unidade base (g, ml ou un). pack: tamanho da embalagem a que o preço se refere.
    step: menor quantidade que se compra (produtos vendidos ao peso); omitido = embalagem inteira. */
 var ING = [
-  /* com preços recolhidos por cadeia */
-  {id:'arroz',      nome:'Arroz agulha',            cat:'merc', u:'g',  pack:1000, srcQty:2000,
-   src:{continente:2.16, pingodoce:2.30, auchan:1.57}},
-  {id:'esparguete', nome:'Esparguete',              cat:'merc', u:'g',  pack:500,  srcQty:2000,
-   src:{continente:1.98, pingodoce:1.98, auchan:1.98}},
-  {id:'azeite',     nome:'Azeite virgem extra',     cat:'temp', u:'ml', pack:1000, srcQty:1000, pantry:true,
-   src:{continente:6.12, pingodoce:4.78, auchan:5.19}},
-  {id:'leite',      nome:'Leite UHT meio-gordo',    cat:'lact', u:'ml', pack:1000, srcQty:6000,
-   src:{continente:5.34, pingodoce:5.10, auchan:5.10}},
+  /* com preços recolhidos por cadeia (atualizados 29 out 2026: arroz, leite, azeite, ovos, esparguete, manteiga, açúcar) */
+  {id:'arroz',      nome:'Arroz agulha',            cat:'merc', u:'g',  pack:1000, srcQty:1000,
+   src:{continente:1.15, pingodoce:1.15, auchan:1.15}},
+  {id:'esparguete', nome:'Esparguete',              cat:'merc', u:'g',  pack:500,  srcQty:500,
+   src:{continente:0.69, pingodoce:0.49, auchan:0.69}},
+  {id:'azeite',     nome:'Azeite virgem extra',     cat:'temp', u:'ml', pack:1000, srcQty:750, pantry:true,
+   src:{continente:5.79, pingodoce:3.85, auchan:4.29}},
+  {id:'leite',      nome:'Leite UHT meio-gordo',    cat:'lact', u:'ml', pack:1000, srcQty:1000,
+   src:{continente:0.89, pingodoce:0.85, auchan:0.85}},
   {id:'ovos',       nome:'Ovos M',                  cat:'lact', u:'un', pack:12,   srcQty:12,
-   src:{continente:2.86, pingodoce:2.99, auchan:4.59}},
+   src:{continente:2.99, pingodoce:2.99, auchan:2.99}},
   {id:'peitofrango',nome:'Peito de frango',         cat:'talho',u:'g',  pack:500,step:100,  srcQty:1000,
    src:{continente:6.49, pingodoce:6.59, auchan:7.79}},
   {id:'carnepicada',nome:'Carne de vaca picada',    cat:'talho',u:'g',  pack:500,step:250,  srcQty:500,
@@ -68,7 +68,7 @@ var ING = [
   {id:'pao',        nome:'Pão de forma',            cat:'pao',  u:'g',  pack:700,  srcQty:700,
    src:{continente:1.27, pingodoce:1.27, auchan:1.99}},
   {id:'manteiga',   nome:'Manteiga com sal',        cat:'lact', u:'g',  pack:250,  srcQty:250,
-   src:{continente:2.19, pingodoce:2.19, auchan:2.09}},
+   src:{continente:2.09, pingodoce:1.99, auchan:2.09}},
   {id:'atum',       nome:'Atum ao natural (lata)',  cat:'merc', u:'g',  pack:120,  srcQty:480,
    src:{continente:3.42, pingodoce:4.23, auchan:5.16}},
   {id:'feijao',     nome:'Feijão seco',             cat:'merc', u:'g',  pack:500,  srcQty:500,
@@ -234,7 +234,7 @@ var RECIPES = [
 ING = ING.concat([
   /* preços recolhidos */
   {id:'farinha',  nome:'Farinha de trigo',      cat:'merc', u:'g',  pack:1000, srcQty:1000, pantry:true, src:{continente:0.59, pingodoce:0.59, auchan:0.85}},
-  {id:'acucar',   nome:'Açúcar branco',         cat:'merc', u:'g',  pack:1000, srcQty:1000, pantry:true, src:{continente:0.84, pingodoce:0.89, auchan:1.09}},
+  {id:'acucar',   nome:'Açúcar branco',         cat:'merc', u:'g',  pack:1000, srcQty:1000, pantry:true, src:{continente:0.89, pingodoce:1.19, auchan:1.09}},
   {id:'oleo',     nome:'Óleo alimentar',        cat:'temp', u:'ml', pack:1000, srcQty:1000, pantry:true, src:{continente:1.95, pingodoce:1.55, auchan:1.55}},
   {id:'iogurte',  nome:'Iogurte natural',       cat:'lact', u:'g',  pack:500,  srcQty:1000, src:{continente:1.39, pingodoce:1.39, auchan:1.39}},
   {id:'flamengo', nome:'Queijo flamengo fatiado', cat:'lact', u:'g', pack:200, srcQty:400,  src:{continente:2.76, pingodoce:2.85, auchan:2.85}},
