@@ -46,7 +46,7 @@ var ING = [
   {id:'leite',      nome:'Leite UHT meio-gordo',    cat:'lact', u:'ml', pack:1000, srcQty:1000,
    src:{continente:0.85, pingodoce:0.85, auchan:0.85}},
   {id:'ovos',       nome:'Ovos M',                  cat:'lact', u:'un', pack:12,   srcQty:12,
-   src:{continente:2.99, pingodoce:2.99, auchan:2.88}},
+   src:{continente:2.99, pingodoce:2.99, auchan:2.88}, gun:60},
   {id:'peitofrango',nome:'Peito de frango',         cat:'talho',u:'g',  pack:500,step:100,  srcQty:1000,
    src:{continente:6.49, pingodoce:6.49, auchan:6.29}},
   {id:'carnepicada',nome:'Carne de vaca picada',    cat:'talho',u:'g',  pack:500,step:250,  srcQty:500,
@@ -77,11 +77,11 @@ var ING = [
    src:{continente:0.89, pingodoce:0.9, auchan:1.05}},
 
   /* estimativas (preço por embalagem) */
-  {id:'alho',       nome:'Dente de alho',           cat:'hort', u:'un', pack:20,   est:0.99},
-  {id:'limao',      nome:'Limão',                   cat:'hort', u:'un', pack:1,    est:0.30, srcQty:1},
-  {id:'salsa',      nome:'Salsa (molho)',           cat:'hort', u:'un', pack:1,    est:0.69, srcQty:1, src:{continente:0.99, pingodoce:0.99}},
+  {id:'alho',       nome:'Dente de alho',           cat:'hort', u:'un', pack:20,   est:0.99, gun:5},
+  {id:'limao',      nome:'Limão',                   cat:'hort', u:'un', pack:1,    est:0.30, srcQty:1, gun:200},
+  {id:'salsa',      nome:'Salsa (molho)',           cat:'hort', u:'un', pack:1,    est:0.69, srcQty:1, src:{continente:0.99, pingodoce:0.99}, gun:50},
   {id:'alface',     nome:'Alface',                  cat:'hort', u:'un', pack:1,    srcQty:2,
-   src:{continente:2.58, pingodoce:2.38, auchan:2.48}},
+   src:{continente:2.58, pingodoce:2.38, auchan:2.48}, gun:300},
   {id:'espinafres', nome:'Espinafres',              cat:'hort', u:'g',  pack:250,  est:1.39, srcQty:250, src:{continente:1.9, pingodoce:1.9, auchan:1.66}},
   {id:'brocolos',   nome:'Brócolos',                cat:'hort', u:'g',  pack:500,  est:1.49, srcQty:500, src:{continente:1.1, pingodoce:1.5, auchan:1.5}},
   {id:'couve',      nome:'Couve',                   cat:'hort', u:'g',  pack:1000,step:250, est:1.69, srcQty:1000, src:{continente:1.99, pingodoce:1.69, auchan:2.19}},
@@ -102,7 +102,7 @@ var ING = [
    src:{continente:0.45, pingodoce:0.44, auchan:0.45}},
   {id:'pimentao',   nome:'Pimentão doce',           cat:'temp', u:'g',  pack:40,   est:1.19, pantry:true, srcQty:40, src:{continente:0.47, pingodoce:1.64}},
   {id:'louro',      nome:'Louro',                   cat:'temp', u:'g',  pack:10,   est:0.89, pantry:true, srcQty:10, src:{continente:0.69, pingodoce:0.77}},
-  {id:'caldo',      nome:'Cubo de caldo',           cat:'temp', u:'un', pack:12,   est:1.09, pantry:true}
+  {id:'caldo',      nome:'Cubo de caldo',           cat:'temp', u:'un', pack:12,   est:1.09, pantry:true, gun:10}
 ];
 
 /* ing: [id do ingrediente, quantidade em unidade base, para "doses" doses] */
@@ -241,7 +241,7 @@ ING = ING.concat([
   {id:'fiambre',  nome:'Fiambre da perna',      cat:'charc',u:'g',  pack:200,  srcQty:200,  src:{continente:1.99, pingodoce:1.99, auchan:1.79}},
   {id:'lombo',    nome:'Lombo de porco',        cat:'talho',u:'g',  pack:1000, step:250, srcQty:1000, src:{continente:5.29, pingodoce:4.99, auchan:4.99}},
   {id:'laranja',  nome:'Laranja',               cat:'hort', u:'g',  pack:1000, step:250, srcQty:1000, src:{continente:1.69, pingodoce:1.69, auchan:1.69}},
-  {id:'carcaca',  nome:'Carcaça',               cat:'pao',  u:'un', pack:6,    srcQty:6,    src:{continente:1.20, pingodoce:0.99, auchan:0.99}},
+  {id:'carcaca',  nome:'Carcaça',               cat:'pao',  u:'un', pack:6,    srcQty:6,    src:{continente:1.20, pingodoce:0.99, auchan:0.99}, gun:70},
   {id:'cereais',  nome:'Flocos de cereais',     cat:'merc', u:'g',  pack:500,  srcQty:500,  src:{continente:0.80, pingodoce:1.20, auchan:0.72}},
 
   /* estimativas */
@@ -265,10 +265,10 @@ ING = ING.concat([
   {id:'courgete', nome:'Curgete',               cat:'hort', u:'g',  pack:1000, step:250, est:1.79, srcQty:1000, src:{continente:1.49, pingodoce:1.49, auchan:1.89}},
   {id:'beringela',nome:'Beringela',             cat:'hort', u:'g',  pack:1000, step:250, est:2.19, srcQty:1000, src:{continente:2.69, pingodoce:2.69, auchan:2.69}},
   {id:'pimento',  nome:'Pimento',               cat:'hort', u:'g',  pack:1000, step:250, est:2.89, srcQty:1000, src:{continente:3.29, pingodoce:2.89, auchan:2.99}},
-  {id:'pepino',   nome:'Pepino',                cat:'hort', u:'un', pack:1,    est:0.69, srcQty:1, src:{continente:0.74, auchan:0.7}},
+  {id:'pepino',   nome:'Pepino',                cat:'hort', u:'un', pack:1,    est:0.69, srcQty:1, src:{continente:0.74, auchan:0.7}, gun:350},
   {id:'feijaoverde',nome:'Feijão-verde',        cat:'hort', u:'g',  pack:500,  step:250, est:1.69, srcQty:500, src:{continente:3.49, pingodoce:2.45}},
-  {id:'abacate',  nome:'Abacate',               cat:'hort', u:'un', pack:1,    est:1.29, srcQty:1, src:{auchan:0.96}},
-  {id:'coentros', nome:'Coentros (molho)',      cat:'hort', u:'un', pack:1,    est:0.69, srcQty:1, src:{continente:0.99, pingodoce:0.99, auchan:0.99}},
+  {id:'abacate',  nome:'Abacate',               cat:'hort', u:'un', pack:1,    est:1.29, srcQty:1, src:{auchan:0.96}, gun:250},
+  {id:'coentros', nome:'Coentros (molho)',      cat:'hort', u:'un', pack:1,    est:0.69, srcQty:1, src:{continente:0.99, pingodoce:0.99, auchan:0.99}, gun:50},
   {id:'milho',    nome:'Milho doce (lata)',     cat:'merc', u:'g',  pack:300,  est:0.89, srcQty:300, src:{continente:1.21, pingodoce:1.04, auchan:1.04}},
   {id:'azeitonas',nome:'Azeitonas',             cat:'merc', u:'g',  pack:200,  est:1.19, srcQty:200, src:{continente:1.43, pingodoce:0.92, auchan:1.62}},
   {id:'batatapalha',nome:'Batata palha',        cat:'merc', u:'g',  pack:190,  est:1.69, srcQty:190, src:{pingodoce:0.99, auchan:1.04}},
@@ -276,11 +276,11 @@ ING = ING.concat([
   {id:'lasanha',  nome:'Massa de lasanha',      cat:'merc', u:'g',  pack:500,  est:1.29, srcQty:500, src:{continente:1.59, pingodoce:1.39, auchan:1.39}},
   {id:'leitecoco',nome:'Leite de coco',         cat:'merc', u:'ml', pack:400,  est:1.49, srcQty:400, src:{continente:1.59, pingodoce:1.39}},
   {id:'panoralado',nome:'Pão ralado',           cat:'merc', u:'g',  pack:500,  est:0.99, pantry:true, srcQty:500, src:{continente:0.99, pingodoce:1}},
-  {id:'massafolhada',nome:'Massa folhada',      cat:'lact', u:'un', pack:1,    est:1.79, srcQty:1, src:{continente:0.95, pingodoce:0.95, auchan:1.09}},
+  {id:'massafolhada',nome:'Massa folhada',      cat:'lact', u:'un', pack:1,    est:1.79, srcQty:1, src:{continente:0.95, pingodoce:0.95, auchan:1.09}, gun:270},
   {id:'mozzarella',nome:'Mozzarella',           cat:'lact', u:'g',  pack:250,  est:1.99, srcQty:250, src:{continente:2.36, pingodoce:1.98, auchan:2.48}},
-  {id:'tortilhas',nome:'Tortilhas de trigo',    cat:'pao',  u:'un', pack:8,    est:1.79, srcQty:8, src:{auchan:1.09}},
-  {id:'paohamb',  nome:'Pão de hambúrguer',     cat:'pao',  u:'un', pack:4,    est:1.49, srcQty:4, src:{continente:0.99, auchan:0.98}},
-  {id:'basepizza',nome:'Base de pizza',         cat:'pao',  u:'un', pack:2,    est:1.99, srcQty:2, src:{continente:5.49}},
+  {id:'tortilhas',nome:'Tortilhas de trigo',    cat:'pao',  u:'un', pack:8,    est:1.79, srcQty:8, src:{auchan:1.09}, gun:60},
+  {id:'paohamb',  nome:'Pão de hambúrguer',     cat:'pao',  u:'un', pack:4,    est:1.49, srcQty:4, src:{continente:0.99, auchan:0.98}, gun:60},
+  {id:'basepizza',nome:'Base de pizza',         cat:'pao',  u:'un', pack:2,    est:1.99, srcQty:2, src:{continente:5.49}, gun:250},
   {id:'vinhobranco',nome:'Vinho branco',        cat:'temp', u:'ml', pack:750,  est:2.49, srcQty:750, src:{continente:2.24, pingodoce:0.74}},
   {id:'vinagre',  nome:'Vinagre',               cat:'temp', u:'ml', pack:500,  est:0.79, pantry:true, srcQty:500, src:{continente:0.38, pingodoce:0.38, auchan:1.16}},
   {id:'cerveja',  nome:'Cerveja',               cat:'merc', u:'ml', pack:330,  est:0.79, srcQty:330, src:{continente:0.59, pingodoce:0.39, auchan:2.09}},
@@ -1641,11 +1641,26 @@ function sticker(perDose){
 }
 function dayName(id){ for (var i = 0; i < DAYS.length; i++) if (DAYS[i].id === id) return DAYS[i].nome; return ''; }
 function slotName(id){ for (var i = 0; i < SLOTS.length; i++) if (SLOTS[i].id === id) return SLOTS[i].nome; return ''; }
+/* peso médio de uma unidade (ing.gun, estimativa) permite preço e quantidade em kg para produtos contados em unidades */
+function precoKgTxt(ing, packPriceV){
+  var per = packPriceV / ing.pack;
+  if (ing.u === 'g')  return eur(per * 1000) + '/kg';
+  if (ing.u === 'ml') return eur(per * 1000) + '/l';
+  if (ing.gun) return eur(per / (ing.gun / 1000)) + '/kg';
+  return null;
+}
+function pesoTxt(ing, base){
+  if (ing.u === 'g')  return fmtNum(base / 1000, 2) + ' kg';
+  if (ing.u === 'ml') return fmtNum(base / 1000, 2) + ' l';
+  if (ing.gun) return fmtNum(base * ing.gun / 1000, 2) + ' kg (' + fmtNum(base, 1) + ' un)';
+  return fmtNum(base, 1) + ' un';
+}
 function unitPriceLabel(ing, packPriceV){
   var per = packPriceV / ing.pack;
   if (ing.u === 'g')  return eur(per * 1000) + '/kg';
   if (ing.u === 'ml') return eur(per * 1000) + '/l';
-  return eur(per) + '/un';
+  var kg = precoKgTxt(ing, packPriceV);
+  return eur(per) + '/un' + (kg ? ' · ' + kg : '');
 }
 function toast(msg){
   var t = $('#toast');
@@ -1793,8 +1808,9 @@ function viewReceitas(){
 /* ---------- vista: Lista de compras ---------- */
 function liRow(it){
   var u = it.ing.u, id = esc(it.ing.id);
-  var buy = it.loose ? fmtQty(it.qty, u) : it.units + ' × ' + fmtQty(it.ing.pack, u);
-  var sub = 'precisas ' + fmtQty(it.need, u) + ' · comprar ' + buy + (it.left >= (u === 'un' ? 0.5 : 1) ? ' · sobra ' + fmtQty(it.left, u) : '');
+  var buy = it.loose ? pesoTxt(it.ing, it.qty) : it.units + ' × ' + fmtQty(it.ing.pack, u);
+  var pk = precoKgTxt(it.ing, it.price.v);
+  var sub = 'precisas ' + pesoTxt(it.ing, it.need) + (pk ? ' a ' + pk : '') + ' · comprar ' + buy + (it.left >= (u === 'un' ? 0.5 : 1) ? ' · sobra ' + pesoTxt(it.ing, it.left) : '');
   var h = '<div class="li' + (it.bought && !it.have ? ' done' : '') + (it.have ? ' dim' : '') + '">';
   if (it.have) h += '<span></span>';
   else h += '<input type="checkbox" id="bc-' + id + '" data-act="bought" data-id="' + id + '"' + (it.bought ? ' checked' : '') + ' aria-label="Comprado: ' + esc(it.ing.nome) + '">';
@@ -2148,7 +2164,7 @@ function sheetRecipe(){
   h += nutriHtml(r);
   h += '<div class="receipt"><div class="rh"><span>Talão · ' + n + ' ' + plural(n, 'dose', 'doses') + '</span><span>' + esc(storeObj().curto) + '</span></div>';
   c.lines.forEach(function(l){
-    h += '<div class="ln"><span class="nm">' + esc(l.ing.nome) + '</span><span class="qt">' + fmtQty(l.qty, l.ing.u) + '</span><span class="lead"></span><span class="pr">' + eur(l.cost) + '</span></div>';
+    h += '<div class="ln"><span class="nm">' + esc(l.ing.nome) + '</span><span class="qt">' + pesoTxt(l.ing, l.qty) + '</span><span class="lead"></span><span class="pr">' + eur(l.cost) + '</span></div>';
   });
   h += '<div class="tot"><div class="ln"><span class="nm">Total</span><span class="lead"></span><span class="pr">' + eur(c.total) + '</span></div>' +
        '<div class="ln big-l"><span class="nm">Por dose</span><span class="lead"></span><span class="pr">' + eur(c.perDose) + '</span></div></div></div>';
