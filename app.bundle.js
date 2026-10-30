@@ -769,7 +769,7 @@ function allIngs(st){ return ING.concat((st && st.customIngs) || []); }
 function packPrice(ing, storeId, st){
   var P = (st && st.prices) || {};
   var own = P[storeId] && P[storeId][ing.id];
-  if (own != null) return {v: own, src: 'manual'};
+  if (own != null && !precoManualSuspeito(ing, storeId, own)) return {v: own, src: 'manual'};
   if (storeId !== 'ref' && BOOK[storeId] && BOOK[storeId][ing.id] != null) return {v: BOOK[storeId][ing.id], src: 'loja'};
   var r = P.ref && P.ref[ing.id];
   if (r != null) return {v: r, src: storeId === 'ref' ? 'manual' : 'media'};
@@ -1059,6 +1059,15 @@ function defaultState(){
     savedAt: 0
   };
 }
+/* Um preço manual só vale se estiver na mesma ordem de grandeza do preço automático (até 4x acima ou abaixo).
+   Preços fora disso (ex.: alface a 400 300 €) são ignorados e retirados ao carregar. */
+var PRECOS_LIMPOS = 0;
+function precoManualSuspeito(ing, storeId, v){
+  if (!(v > 0)) return false;
+  var auto = (BOOK[storeId] && BOOK[storeId][ing.id]) || (BOOK.ref && BOOK.ref[ing.id]) || ing.est;
+  if (!(auto > 0)) return v > 500;
+  return v > auto * 4 || v < auto / 4;
+}
 function normalizeState(s){
   var d = defaultState();
   if (!s || typeof s !== 'object') return d;
@@ -1092,6 +1101,16 @@ function normalizeState(s){
   o.tier = (s.tier === 1 || s.tier === 2 || s.tier === 3) ? s.tier : 'all';
   o.customIngs = Array.isArray(s.customIngs) ? s.customIngs : [];
   o.prices = (s.prices && typeof s.prices === 'object') ? s.prices : {};
+  PRECOS_LIMPOS = 0;
+  Object.keys(o.prices).forEach(function(sid){
+    var P = o.prices[sid];
+    if (!P || typeof P !== 'object'){ delete o.prices[sid]; return; }
+    Object.keys(P).forEach(function(id){
+      var ing = ING.filter(function(i){ return i.id === id; })[0] || o.customIngs.filter(function(i){ return i.id === id; })[0];
+      if (!ing){ delete P[id]; return; }
+      if (precoManualSuspeito(ing, sid, Number(P[id]))){ delete P[id]; PRECOS_LIMPOS++; }
+    });
+  });
   var sh = s.shop || {};
   o.shop = {have: sh.have || {}, bought: sh.bought || {}, extras: Array.isArray(sh.extras) ? sh.extras : []};
   o.savedAt = Number(s.savedAt) || 0;
@@ -1995,6 +2014,7 @@ function viewPrecos(){
   else note = 'Ainda não tenho preços recolhidos de ' + st.curto + ', por isso mostro a média de Continente, Pingo Doce e Auchan. Escreve os preços que vês na loja e passam a valer só para ' + st.curto + '.';
   var h = '<div class="vh"><h1 class="h2">Preços</h1><div class="row"><button type="button" class="btn pri sm" data-act="scan-open">Ler etiqueta</button><button type="button" class="btn sm" data-act="fat-open">Ler fatura</button><button type="button" class="btn sm" data-act="new-ing">Novo ingrediente</button></div></div>';
   h += '<div class="stack"><p class="note">Preço por embalagem em <strong>' + esc(st.curto) + '</strong>. ' + note +
+       (PRECOS_LIMPOS ? ' <strong>Retirei ' + PRECOS_LIMPOS + (PRECOS_LIMPOS === 1 ? ' preço manual fora do normal' : ' preços manuais fora do normal') + ' (ex.: 400 300 € na alface); voltaram ao automático.</strong>' : '') +
        ' <a href="https://www.ativos.pt/cabaz-alimentar/produtos" target="_blank" rel="noopener noreferrer">Ver fonte</a>. Toca em Editar para mudar preços ou o produto.</p>';
   h += '<input id="pSearch" class="inp" type="search" placeholder="Procurar ingrediente" aria-label="Procurar ingrediente" value="' + esc(UI.pq) + '">';
   h += '<details class="card"><summary>Importar preços (colar lista)</summary>' +
