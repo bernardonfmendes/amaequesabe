@@ -82,3 +82,9 @@ A função `supabase/functions/ler-fatura/index.ts` pede ao Gemini a lista de ar
 Na secção **Semana**, o botão **Planear com IA** preenche só as refeições vazias. A IA escolhe entre as receitas que já encaixam em cada refeição (proteína, sopa, pequeno-almoço) e respeita o orçamento que sobra. O planeador normal fecha o que a IA deixar de fora, e se a IA falhar a app usa esse planeador.
 - Função: `supabase/functions/planear-semana/index.ts` (mesmo segredo `GEMINI_API_KEY` de `ler-fatura`).
 - A IA não pode inventar receitas nem ultrapassar as regras: no máximo 2 refeições de carne vermelha, 1 de charcutaria, e cada receita até 2 vezes.
+
+## Publicar uma versão nova (aviso de atualização)
+Em cada publicação que mude a app, sobe o número em três sítios:
+1. `version.json` → `"versao"` (é o que a app compara; a app mostra o aviso quando este número é maior).
+2. `index.html` → `var APP_VERSION` (versão que esta página traz).
+3. `index.html` → `?v=` dos scripts `config.js` e `app.bundle.js` (para o Safari não usar a cópia antiga).
