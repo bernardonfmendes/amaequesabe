@@ -290,7 +290,9 @@ select.inp{padding-right:8px}
 .best{font-size:12px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:var(--ok);margin-left:6px}
 
 /* preços */
-.prow{display:grid;grid-template-columns:minmax(0,1fr) 112px;gap:4px 12px;align-items:center;padding:10px 0;border-top:1px solid var(--rule)}
+.prow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;align-items:center;padding:10px 0;border-top:1px solid var(--rule)}
+.prow .pedit{display:flex;align-items:center;gap:10px;justify-content:flex-end}
+.prow .pval{font-family:var(--f-mono);font-weight:700;font-size:15px;white-space:nowrap}
 .prow:first-of-type{border-top:0}
 .prow .pn{font-weight:700;overflow-wrap:anywhere}
 .prow .ps{font-size:12px;color:var(--ink-2)}
@@ -469,7 +471,7 @@ body.gated .tabs, body.gated .ctx, body.gated #sync{display:none}
     });
   })();
 </script>
-<script src="config.js?v=5"></script>
-<script src="app.bundle.js?v=5"></script>
+<script src="config.js?v=6"></script>
+<script src="app.bundle.js?v=6"></script>
 </body>
 </html>

@@ -1981,9 +1981,8 @@ function priceRows(){
       var p = packPrice(i, S.store, S), cls = p.src === 'manual' ? ' man' : (p.src === 'est' ? ' est' : '');
       out += '<div class="prow"><div><span class="pn">' + esc(i.nome) + '</span><span class="src' + cls + '">' + SRC_LABEL[p.src] + '</span>' +
              '<div class="ps">' + fmtQty(i.pack, i.u) + ' · ' + unitPriceLabel(i, p.v) +
-             (p.src === 'manual' && !i.custom ? ' · <button type="button" class="linkbtn" data-act="price-reset" data-id="' + esc(i.id) + '">repor</button>' : '') +
-             (i.custom ? ' · <button type="button" class="linkbtn" data-act="ing-del" data-id="' + esc(i.id) + '">apagar</button>' : '') + '</div></div>' +
-             '<span class="pedit"><button type="button" class="btn pri sm pguard" data-act="price-save" data-id="' + esc(i.id) + '" hidden>Guardar</button></span><input class="inp pinput" type="number" step="0.01" min="0" inputmode="decimal" data-id="' + esc(i.id) + '" value="' + p.v.toFixed(2) + '" aria-label="Preço de ' + esc(i.nome) + ' em euros por ' + fmtQty(i.pack, i.u) + '"></div>';
+             '</div></div>' +
+             '<span class="pedit"><span class="pval">' + eur(p.v) + '</span><button type="button" class="btn sm" data-act="price-edit" data-id="' + esc(i.id) + '" aria-label="Editar ' + esc(i.nome) + '">Editar</button></span></div>';
     });
     out += '</div></div>';
   });
@@ -1996,7 +1995,7 @@ function viewPrecos(){
   else note = 'Ainda não tenho preços recolhidos de ' + st.curto + ', por isso mostro a média de Continente, Pingo Doce e Auchan. Escreve os preços que vês na loja e passam a valer só para ' + st.curto + '.';
   var h = '<div class="vh"><h1 class="h2">Preços</h1><div class="row"><button type="button" class="btn pri sm" data-act="scan-open">Ler etiqueta</button><button type="button" class="btn sm" data-act="fat-open">Ler fatura</button><button type="button" class="btn sm" data-act="new-ing">Novo ingrediente</button></div></div>';
   h += '<div class="stack"><p class="note">Preço por embalagem em <strong>' + esc(st.curto) + '</strong>. ' + note +
-       ' <a href="https://www.ativos.pt/cabaz-alimentar/produtos" target="_blank" rel="noopener noreferrer">Ver fonte</a>. Escreve um valor para o corrigires.</p>';
+       ' <a href="https://www.ativos.pt/cabaz-alimentar/produtos" target="_blank" rel="noopener noreferrer">Ver fonte</a>. Toca em Editar para mudar preços ou o produto.</p>';
   h += '<input id="pSearch" class="inp" type="search" placeholder="Procurar ingrediente" aria-label="Procurar ingrediente" value="' + esc(UI.pq) + '">';
   h += '<details class="card"><summary>Importar preços (colar lista)</summary>' +
        '<p class="note" style="margin-bottom:8px">Uma linha por ingrediente, com o nome e o preço da embalagem indicada, separados por ponto e vírgula.</p>' +
@@ -2273,6 +2272,94 @@ function saveEditor(){
   S.recipes.forEach(function(r, i){ if (r.id === rec.id) idx = i; });
   if (idx >= 0) S.recipes[idx] = rec; else S.recipes.push(rec);
   persist(); closeSheet(); render(); toast('Receita guardada');
+}
+
+/* editar produto: aberto a partir de Preços. Produtos da lista de origem mudam só os preços por loja;
+   ingredientes criados por ti mudam tudo. */
+var EP = null;
+function preencherEP(id){
+  var ing = IMAP[id];
+  EP.prices = {}; EP.auto = {};
+  STORES.filter(function(s){ return s.id !== 'ref'; }).forEach(function(s){
+    var manual = S.prices[s.id] && S.prices[s.id][id];
+    var auto = BOOK[s.id] && BOOK[s.id][id];
+    EP.auto[s.id] = auto != null ? auto : null;
+    var v = manual != null ? manual : auto;
+    EP.prices[s.id] = v != null ? Number(v).toFixed(2) : '';
+  });
+  return ing;
+}
+function abrirEditarPreco(id){
+  var ing = IMAP[id]; if (!ing) return;
+  EP = {id: id, custom: !!ing.custom, nome: ing.nome, cat: ing.cat, u: ing.u, pack: String(ing.pack),
+        est: ing.est != null ? Number(ing.est).toFixed(2) : ''};
+  preencherEP(id);
+  openSheet({type: 'editprice'});
+}
+function sheetEditPrice(){
+  if (!EP) return {title: 'Editar produto', html: ''};
+  var ing = IMAP[EP.id] || {u: EP.u, pack: Number(EP.pack)};
+  var h = '<p class="note">' + (EP.custom ? 'Ingrediente criado por ti: podes mudar tudo.' : 'Produto da lista de origem: podes mudar os preços por loja. Nome, unidade e embalagem ficam fixos.') + '</p>';
+  h += '<div class="fgrid">';
+  h += '<div class="field"><label class="lbl" for="epNome">Nome</label><input id="epNome" class="inp" data-e="nome" maxlength="60" value="' + esc(EP.nome) + '"' + (EP.custom ? '' : ' disabled') + '></div>';
+  if (EP.custom){
+    h += '<div class="two"><div class="field"><label class="lbl" for="epCat">Corredor</label><select id="epCat" class="inp" data-e="cat">' +
+         CATS.map(function(c){ return '<option value="' + c.id + '"' + (c.id === EP.cat ? ' selected' : '') + '>' + c.nome + '</option>'; }).join('') + '</select></div>' +
+         '<div class="field"><label class="lbl" for="epU">Unidade</label><select id="epU" class="inp" data-e="u">' +
+         [['g', 'gramas (g)'], ['ml', 'mililitros (ml)'], ['un', 'unidades (un)']].map(function(u){ return '<option value="' + u[0] + '"' + (u[0] === EP.u ? ' selected' : '') + '>' + u[1] + '</option>'; }).join('') + '</select></div></div>';
+    h += '<div class="two"><div class="field"><label class="lbl" for="epPack">Tamanho da embalagem</label><input id="epPack" class="inp" type="number" min="0" step="any" inputmode="decimal" data-e="pack" value="' + esc(EP.pack) + '"></div>' +
+         '<div class="field"><label class="lbl" for="epEst">Preço por omissão (€)</label><input id="epEst" class="inp" type="number" min="0" step="0.01" inputmode="decimal" data-e="est" value="' + esc(EP.est) + '"></div></div>';
+  } else {
+    h += '<div class="two"><div class="field"><label class="lbl" for="epU0">Unidade</label><input id="epU0" class="inp" value="' + esc(ing.u === 'g' ? 'gramas (g)' : ing.u === 'ml' ? 'mililitros (ml)' : 'unidades (un)') + '" disabled></div>' +
+         '<div class="field"><label class="lbl" for="epPk0">Embalagem</label><input id="epPk0" class="inp" value="' + esc(fmtQty(ing.pack, ing.u)) + '" disabled></div></div>';
+  }
+  h += '</div>';
+  h += '<div class="fgrid"><span class="lbl">Preço da embalagem por loja</span>';
+  STORES.filter(function(s){ return s.id !== 'ref'; }).forEach(function(s){
+    var v = parseFloat(String(EP.prices[s.id]).replace(',', '.'));
+    var kg = (v > 0 && ing.pack) ? precoKgTxt(ing, v) : null;
+    h += '<div class="field"><label class="lbl" for="epP-' + s.id + '">' + esc(s.curto) + (kg ? ' · ' + kg : '') + '</label>' +
+         '<input id="epP-' + s.id + '" class="inp" type="number" min="0" step="0.01" inputmode="decimal" data-e="p-' + s.id + '" value="' + esc(EP.prices[s.id]) + '" placeholder="automático"></div>';
+  });
+  h += '</div>';
+  h += '<p class="note">Campo vazio = volta ao preço automático dessa loja.</p>';
+  h += '<button type="button" class="btn pri block" data-act="ep-save">Guardar</button>';
+  h += '<button type="button" class="btn block" data-act="ep-reset">Repor preços automáticos</button>';
+  h += '<button type="button" class="btn block" data-act="ep-cancel">Cancelar</button>';
+  if (EP.custom) h += '<button type="button" class="btn danger block" data-act="ep-del">Apagar ingrediente</button>';
+  return {title: 'Editar produto', html: h};
+}
+function guardarEditarPreco(){
+  if (!EP) return;
+  var ing = IMAP[EP.id];
+  if (!ing){ EP = null; closeSheet(); return; }
+  if (EP.custom){
+    var nome = String(EP.nome || '').trim(), pack = Number(EP.pack), est = parseFloat(String(EP.est).replace(',', '.'));
+    if (!nome){ toast('Dá um nome ao ingrediente.'); return; }
+    if (!(pack > 0)){ toast('Indica o tamanho da embalagem.'); return; }
+    if (!(est >= 0)){ toast('Indica o preço por omissão.'); return; }
+    S.customIngs.forEach(function(c){ if (c.id === EP.id){ c.nome = nome; c.cat = EP.cat; c.u = EP.u; c.pack = pack; c.est = round2(est); } });
+    rebuildIngIndex(S);
+  }
+  Object.keys(EP.prices).forEach(function(sid){
+    if (!S.prices[sid]) S.prices[sid] = {};
+    var v = parseFloat(String(EP.prices[sid]).replace(',', '.')), auto = EP.auto[sid];
+    if (!(v > 0)) delete S.prices[sid][EP.id];
+    else if (auto != null && round2(v) === auto) delete S.prices[sid][EP.id];
+    else S.prices[sid][EP.id] = round2(v);
+  });
+  persist(); EP = null; closeSheet(); render(); toast('Produto guardado.');
+}
+function repoEditarPreco(){
+  if (!EP) return;
+  Object.keys(S.prices).forEach(function(sid){ if (S.prices[sid]) delete S.prices[sid][EP.id]; });
+  persist(); preencherEP(EP.id); renderSheet(false); toast('Preços automáticos repostos.');
+}
+function apagarEditarPreco(){
+  if (!EP) return;
+  var id = EP.id;
+  ACTS['ing-del']({dataset: {id: id}});
+  if (!IMAP[id]){ EP = null; closeSheet(); render(); }
 }
 
 /* novo ingrediente */
@@ -2555,7 +2642,7 @@ function planearSemanaIA(){
     });
 }
 
-var SHEETS = {picker: sheetPicker, recipe: sheetRecipe, editor: sheetEditor, newing: sheetNewIng, scan: sheetScan, login: sheetLogin, fatura: sheetFatura, aiRecipe: sheetAiRecipe};
+var SHEETS = {picker: sheetPicker, recipe: sheetRecipe, editor: sheetEditor, newing: sheetNewIng, editprice: sheetEditPrice, scan: sheetScan, login: sheetLogin, fatura: sheetFatura, aiRecipe: sheetAiRecipe};
 
 /* ---------- receita sugerida pela IA (só guarda depois de confirmares) ---------- */
 var AIR = null;   /* {state: 'pick' | 'busy' | 'review', draft, pedido, msg} */
@@ -2993,6 +3080,11 @@ var ACTS = {
     Object.keys(S.plan).forEach(function(k){ if (S.plan[k] === id) delete S.plan[k]; });
     persist(); closeSheet(); render(); toast('Receita apagada');
   },
+  'price-edit': function(el){ abrirEditarPreco(el.dataset.id); },
+  'ep-save': guardarEditarPreco,
+  'ep-cancel': function(){ EP = null; closeSheet(); },
+  'ep-reset': repoEditarPreco,
+  'ep-del': apagarEditarPreco,
   'new-ing': function(){ NI = {from: 'prices', nome: '', cat: 'merc', u: 'g', pack: '', price: '', tipo: 'out'}; openSheet({type: 'newing'}); },
   'ni-save': saveNewIng,
   'ni-cancel': function(){
@@ -3102,6 +3194,11 @@ document.addEventListener('input', function(e){
   if (el.id === 'pSearch'){ UI.pq = el.value; $('#pList').innerHTML = priceRows(); return; }
   if (el.id === 'pkSearch'){ UI.pk.q = el.value; $('#pkList').innerHTML = pickerRows(); return; }
   if (SH && SH.type === 'newing' && NI && el.dataset && el.dataset.n){ NI[el.dataset.n] = el.value; return; }
+  if (SH && SH.type === 'editprice' && EP && el.dataset && el.dataset.e){
+    var k = el.dataset.e;
+    if (k.indexOf('p-') === 0) EP.prices[k.slice(2)] = el.value; else EP[k] = el.value;
+    return;
+  }
   if (SH && SH.type === 'editor' && ED && el.dataset && el.dataset.f){
     var f = el.dataset.f, i = Number(el.dataset.i);
     if (f === 'nome' || f === 'cat' || f === 'passos' || f === 'refeicao') ED[f] = el.value;
