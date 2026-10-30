@@ -772,7 +772,7 @@ function packPrice(ing, storeId, st){
   if (own != null && !precoManualSuspeito(ing, storeId, own)) return {v: own, src: 'manual'};
   if (storeId !== 'ref' && BOOK[storeId] && BOOK[storeId][ing.id] != null) return {v: BOOK[storeId][ing.id], src: 'loja'};
   var r = P.ref && P.ref[ing.id];
-  if (r != null) return {v: r, src: storeId === 'ref' ? 'manual' : 'media'};
+  if (r != null && !precoManualSuspeito(ing, 'ref', r)) return {v: r, src: storeId === 'ref' ? 'manual' : 'media'};
   if (BOOK.ref[ing.id] != null) return {v: BOOK.ref[ing.id], src: storeId === 'ref' ? 'mediana' : 'media'};
   return {v: ing.est || 0, src: ing.custom ? 'manual' : 'est'};
 }
