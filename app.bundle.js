@@ -2112,10 +2112,23 @@ function syncCtx(){
 function isGated(){ return !SESSION || PASS_RECOVERY; }
 /* qualquer pessoa com o link pede um convite com o seu email */
 function conviteHTML(){
-  return '<div class="sect" style="margin-top:8px">Ainda não tens conta?</div>' +
-    '<p class="note">Escreve o teu email. Recebes um email para criares a tua palavra-passe.</p>' +
+  return '<details class="sub"><summary style="cursor:pointer;list-style:none;color:#5b6376;font-weight:700;font-size:15px;min-height:44px;display:flex;align-items:center">Ainda não tens conta?</summary>' +
+    '<div style="display:flex;flex-direction:column;gap:10px;padding:6px 0 4px">' +
+    '<p class="note" style="margin:0">Escreve o teu email e recebes um link para criares a palavra-passe.</p>' +
     '<input class="inp" type="email" autocomplete="email" inputmode="email" placeholder="o.teu@email.com" data-l="convEmail" aria-label="Email para o convite" value="' + esc(LOGIN.convEmail || '') + '">' +
-    '<button type="button" class="btn block" data-act="login-convite">Pedir convite</button>';
+    '<button type="button" class="btn block" data-act="login-convite">Pedir convite</button>' +
+    '</div></details>';
+}
+/* cópia de segurança: recolhida, para não pesar no ecrã */
+function backupHTML(){
+  var hasBackup = false; try { hasBackup = !!localStorage.getItem(BACKUP_KEY); } catch (e) {}
+  return '<details class="sub"><summary style="cursor:pointer;list-style:none;color:#5b6376;font-weight:700;font-size:15px;min-height:44px;display:flex;align-items:center">Cópia de segurança</summary>' +
+    '<div style="display:flex;flex-direction:column;gap:10px;padding:6px 0 4px">' +
+    '<p class="note" style="margin:0">Guarda os dados num ficheiro ou importa um guardado antes. Sem ligar, a app guarda tudo só neste dispositivo.</p>' +
+    '<div class="row wrap"><button type="button" class="btn" data-act="data-export">Exportar dados</button>' +
+    '<label class="btn" style="cursor:pointer">Importar ficheiro<input id="importFile" type="file" accept="application/json,.json" hidden></label>' +
+    (hasBackup ? '<button type="button" class="btn" data-act="backup-restore">Restaurar cópia deste dispositivo</button>' : '') +
+    '</div></div></details>';
 }
 function pedirConvite(){
   var em = (LOGIN.convEmail || '').trim();
@@ -2639,30 +2652,23 @@ function sheetLogin(){
   var h = '';
   if (SESSION && !PASS_RECOVERY){
     h += '<p class="note">Estás ligado como <b>' + esc(SESSION.user.email) + '</b>. A semana, as receitas, os preços e a lista são partilhados com quem também estiver ligado à casa.</p>';
-    h += '<p class="note">As alterações são guardadas na casa automaticamente. Para veres logo o que os outros guardaram, carrega em <b>Atualizar</b> (no cabeçalho).</p>';
+    h += '<p class="note">As alterações são guardadas automaticamente. Para veres logo o que os outros guardaram, carrega em <b>Atualizar</b> (no cabeçalho).</p>';
     h += '<button type="button" class="btn block" data-act="logout">Sair</button>';
   } else if (PASS_RECOVERY){
     h += '<p class="note">Escolhe a nova palavra-passe (pelo menos 6 caracteres).</p>';
     h += '<input class="inp" type="password" autocomplete="new-password" placeholder="Nova palavra-passe" data-l="novaPass" aria-label="Nova palavra-passe" value="">';
     h += '<button type="button" class="btn pri block" data-act="login-nova">Definir palavra-passe</button>';
   } else {
-    h += '<p class="note">Entra com o teu email e palavra-passe. Só os emails da casa entram.</p>';
+    h += '<p class="note">Só os emails da casa conseguem entrar.</p>';
     h += '<input id="loginEmail" class="inp" type="email" autocomplete="email" inputmode="email" placeholder="o.teu@email.com" data-l="email" aria-label="Email" value="' + esc(LOGIN.email) + '">';
     h += '<input id="loginPass" class="inp" type="password" autocomplete="current-password" placeholder="Palavra-passe" data-l="pass" aria-label="Palavra-passe" value="">';
     h += '<button type="button" class="btn pri block" data-act="login-send">Entrar</button>';
     h += '<button type="button" class="linkbtn" data-act="login-reset">Esqueci-me da palavra-passe</button>';
-    h += conviteHTML();
     if (LOGIN.msg) h += '<p class="note" role="status">' + esc(LOGIN.msg) + '</p>';
+    h += conviteHTML();
   }
-  h += '<div><div class="sect" style="margin-top:4px">Cópia de segurança</div>';
-  h += '<p class="note">Guarda os dados num ficheiro, ou importa um ficheiro guardado antes.</p>';
-  h += '<div class="row wrap" style="margin-top:8px"><button type="button" class="btn" data-act="data-export">Exportar dados</button>' +
-       '<label class="btn" style="cursor:pointer">Importar ficheiro<input id="importFile" type="file" accept="application/json,.json" hidden></label></div>';
-  var hasBackup = false; try { hasBackup = !!localStorage.getItem(BACKUP_KEY); } catch (e) {}
-  if (hasBackup) h += '<div class="row wrap" style="margin-top:8px"><button type="button" class="btn" data-act="backup-restore">Restaurar cópia deste dispositivo</button></div>';
-  h += '</div>';
-  h += '<p class="note">Sem ligar, a app guarda tudo só neste dispositivo.</p>';
-  return {title: SESSION && !PASS_RECOVERY ? 'Casa e dados' : 'Partilhar com a casa', html: h};
+  h += backupHTML();
+    return {title: SESSION && !PASS_RECOVERY ? 'Casa e dados' : 'Partilhar com a casa', html: h};
 }
 
 /* ---------- planeamento com IA (só preenche refeições vazias; o planeador normal fecha o que sobrar) ---------- */
