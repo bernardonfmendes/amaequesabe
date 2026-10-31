@@ -2742,7 +2742,12 @@ var AIR = null;   /* {state: 'pick' | 'busy' | 'review', draft, pedido, msg} */
 var AIR_SUGERIDAS = [];   /* nomes já sugeridos nesta sessão, para a IA não repetir */
 function sugerirReceitaIA(pedido){
   if (!SB || !SESSION){ toast('Entra na casa para usar a IA.'); return; }
-  var produtos = allIngs(S).map(function(i){ return {id: i.id, nome: i.nome, u: i.u}; });
+  /* preço por unidade base (€ por g, por ml ou por un) na loja escolhida, para a IA estimar o custo */
+  var produtos = allIngs(S).map(function(i){
+    var pv = packPrice(i, S.store, S).v;
+    var base = (i.pack > 0 && pv > 0) ? round2(pv / i.pack * 10000) / 10000 : null;
+    return {id: i.id, nome: i.nome, u: i.u, preco_base: base};
+  });
   var evitar = S.recipes.map(function(r){ return r.nome; }).concat(AIR_SUGERIDAS).slice(-150);
   AIR = {state: 'busy', pedido: pedido || '', msg: ''};
   renderSheet(false);
