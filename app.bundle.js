@@ -1601,7 +1601,9 @@ function initRemote(){
   var cfg = window.BC_CONFIG || {};
   if (!window.supabase || !cfg.SUPABASE_URL || /COLOCA/.test(cfg.SUPABASE_URL)){ AUTH_READY = true; setSync('local'); render(); return; }
   SB = window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY, {auth: {persistSession: true, detectSessionInUrl: true}});
+  var VIA_LINK = /[#&]type=(invite|recovery)/.test(location.hash);  /* chegou pelo email de convite */
   SB.auth.onAuthStateChange(function(ev, s){
+    if (VIA_LINK && s && (ev === 'SIGNED_IN' || ev === 'PASSWORD_RECOVERY')){ VIA_LINK = false; PASS_RECOVERY = true; SESSION = s; AUTH_READY = true; render(); return; }
     if (ev === 'PASSWORD_RECOVERY'){ PASS_RECOVERY = true; SESSION = s || null; AUTH_READY = true; render(); return; }
     var was = SESSION;
     SESSION = s || null;
@@ -2108,6 +2110,28 @@ function syncCtx(){
 }
 /* sem sessão, só se vê o ecrã de entrada (e a recuperação de palavra-passe) */
 function isGated(){ return !SESSION || PASS_RECOVERY; }
+/* qualquer pessoa com o link pede um convite com o seu email */
+function conviteHTML(){
+  return '<div class="sect" style="margin-top:8px">Ainda não tens conta?</div>' +
+    '<p class="note">Escreve o teu email. Recebes um email para criares a tua palavra-passe.</p>' +
+    '<input class="inp" type="email" autocomplete="email" inputmode="email" placeholder="o.teu@email.com" data-l="convEmail" aria-label="Email para o convite" value="' + esc(LOGIN.convEmail || '') + '">' +
+    '<button type="button" class="btn block" data-act="login-convite">Pedir convite</button>';
+}
+function pedirConvite(){
+  var em = (LOGIN.convEmail || '').trim();
+  if (!SB){ toast('A ligação à casa não está configurada.'); return; }
+  if (!/^\S+@\S+\.\S+$/.test(em)){ toast('Escreve um email válido.'); return; }
+  LOGIN.msg = 'A enviar…'; refreshLogin();
+  SB.functions.invoke('convidar-pessoa', {body: {email: em}}).then(function(r){
+    if (r.error || !r.data || r.data.erro){
+      LOGIN.msg = (r.data && r.data.erro) || 'Não consegui enviar o convite. Tenta outra vez.';
+    } else {
+      LOGIN.msg = 'Pronto. Vê o teu email e segue o link para criares a palavra-passe.';
+      LOGIN.convEmail = '';
+    }
+    refreshLogin();
+  });
+}
 function gateHTML(){
   var h = '<section class="gate card" aria-label="Entrar na casa"><p class="eyebrow">Casa</p><h1 class="h2">Entrar na casa</h1>';
   if (!AUTH_READY){
@@ -2120,12 +2144,11 @@ function gateHTML(){
          '<button type="button" class="btn pri block" data-act="login-nova">Definir palavra-passe</button>';
   } else {
     h += '<p class="note">A app só funciona depois de entrares com o teu email e palavra-passe.</p>' +
-         '<div class="row wrap"><button type="button" class="btn sm" data-act="login-pick-1">Bernardo</button>' +
-         '<button type="button" class="btn sm" data-act="login-pick-2">Paula</button></div>' +
          '<input class="inp" type="email" autocomplete="email" inputmode="email" placeholder="o.teu@email.com" data-l="email" aria-label="Email" value="' + esc(LOGIN.email) + '">' +
          '<input class="inp" type="password" autocomplete="current-password" placeholder="Palavra-passe" data-l="pass" aria-label="Palavra-passe" value="">' +
          '<button type="button" class="btn pri block" data-act="login-send">Entrar</button>' +
-         '<button type="button" class="linkbtn" data-act="login-reset">Esqueci-me da palavra-passe</button>';
+         '<button type="button" class="linkbtn" data-act="login-reset">Esqueci-me da palavra-passe</button>' +
+         conviteHTML();
     if (LOGIN.msg) h += '<p class="note" role="status">' + esc(LOGIN.msg) + '</p>';
   }
   return h + '</section>';
@@ -2624,12 +2647,11 @@ function sheetLogin(){
     h += '<button type="button" class="btn pri block" data-act="login-nova">Definir palavra-passe</button>';
   } else {
     h += '<p class="note">Entra com o teu email e palavra-passe. Só os emails da casa entram.</p>';
-    h += '<div class="row wrap"><button type="button" class="btn sm" data-act="login-pick-1">Bernardo</button>' +
-         '<button type="button" class="btn sm" data-act="login-pick-2">Paula</button></div>';
     h += '<input id="loginEmail" class="inp" type="email" autocomplete="email" inputmode="email" placeholder="o.teu@email.com" data-l="email" aria-label="Email" value="' + esc(LOGIN.email) + '">';
     h += '<input id="loginPass" class="inp" type="password" autocomplete="current-password" placeholder="Palavra-passe" data-l="pass" aria-label="Palavra-passe" value="">';
     h += '<button type="button" class="btn pri block" data-act="login-send">Entrar</button>';
     h += '<button type="button" class="linkbtn" data-act="login-reset">Esqueci-me da palavra-passe</button>';
+    h += conviteHTML();
     if (LOGIN.msg) h += '<p class="note" role="status">' + esc(LOGIN.msg) + '</p>';
   }
   h += '<div><div class="sect" style="margin-top:4px">Cópia de segurança</div>';
@@ -3093,8 +3115,7 @@ var ACTS = {
   },
   'price-save': function(el){ var inp = el.closest('.prow').querySelector('.pinput'); setPrice(inp); toast('Preço guardado.'); },
   'casa-atualizar': function(){ refreshCasa(); },
-  'login-pick-1': function(){ LOGIN.email = 'bernardo.n.f.mendes@gmail.com'; LOGIN.msg = ''; refreshLogin(); },
-  'login-pick-2': function(){ LOGIN.email = 'paulanevesramalho@gmail.com'; LOGIN.msg = ''; refreshLogin(); },
+  'login-convite': pedirConvite,
   'login-send': signIn,
   'login-reset': resetPassword,
   'login-nova': setNewPassword,
