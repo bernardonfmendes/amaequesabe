@@ -1141,6 +1141,9 @@ function precoManualSuspeito(ing, storeId, v){
   if (!(auto > 0)) return v > 500;
   return v > auto * 4 || v < auto / 4;
 }
+/* pessoas e porções: cada pessoa tem um peso (0,5 criança pequena, 1 adulto, 1,5 ou 2 para quem come mais);
+   o total é o número de porções que as receitas e a lista usam */
+function somaPesos(l){ return l.reduce(function(a, p){ return a + p.peso; }, 0); }
 function normalizeState(s){
   var d = defaultState();
   if (!s || typeof s !== 'object') return d;
@@ -3150,9 +3153,6 @@ function faturaSave(){
 }
 
 /* ---------- ações ---------- */
-/* pessoas e porções: cada pessoa tem um peso (0,5 criança pequena, 1 adulto, 1,5 ou 2 para quem come mais);
-   o total é o número de porções que as receitas e a lista usam */
-function somaPesos(l){ return l.reduce(function(a, p){ return a + p.peso; }, 0); }
 function sincronizaPessoas(){
   S.people = Math.min(12, Math.max(0.5, somaPesos(S.pessoas || [])));
   persist(); render();
