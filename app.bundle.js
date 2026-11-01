@@ -1866,23 +1866,29 @@ function viewSemana(){
        '<div class="stat"><div class="k">Orçamento/<wbr>dose</div><div class="v">' + eur(cap) + '</div></div>' +
        '</div></section>';
 
-  h += '<div class="row wrap"><span class="lbl" style="margin:0">Refeições</span>';
+  h += '<div class="plano-set">';
+  h += '<span class="set-h">Refeições a planear</span><div class="tiles">';
   SLOTS.forEach(function(s){
     h += '<button type="button" class="chip" data-act="slot" data-slot="' + s.id + '" aria-pressed="' + !!S.slots[s.id] + '">' + s.nome + '</button>';
   });
   h += '</div>';
   if (slots.some(function(s){ return s.id !== 'peq'; })){
-    h += '<div class="row wrap"><span class="lbl" style="margin:0">Sopa de entrada</span>';
+    h += '<span class="set-h">Sopa de entrada</span><div class="tiles">';
     slots.forEach(function(s){
       if (s.id !== 'peq') h += '<button type="button" class="chip" data-act="soup-toggle" data-slot="' + s.id + '" aria-pressed="' + !!S.soup[s.id] + '">' + s.curto + '</button>';
     });
     h += '</div>';
   }
-  h += '<div class="stack" style="gap:6px"><span class="lbl" style="margin:0">Sugerir receitas</span>' + tierChips('tier-set', S.tier) + '</div>';
-  h += '<div class="row wrap"><button type="button" class="btn pri" data-act="suggest">' +
+  h += '<label class="flt"><span class="set-h">Orçamento por refeição</span><select id="tierSel" class="inp">';
+  h += '<option value="all"' + (String(S.tier) === 'all' ? ' selected' : '') + '>Todos os preços</option>';
+  TIERS.forEach(function(t){
+    h += '<option value="' + t.n + '"' + (String(S.tier) === String(t.n) ? ' selected' : '') + '>' + t.sym + ' ' + t.nome + '</option>';
+  });
+  h += '</select></label>';
+  h += '<div class="acoes"><button type="button" class="btn pri" data-act="suggest">' +
        (UI.sug ? 'Toca outra vez para refazer a semana' : (sm.total && sm.count >= sm.total ? 'Refazer semana' : 'Sugerir semana')) + '</button>' +
        '<button type="button" class="btn" data-act="ai-plan"' + (IA_PLAN.busy ? ' disabled' : '') + '>' + (IA_PLAN.busy ? 'A IA está a planear…' : (IA_PLAN.confirmar ? 'Toca outra vez para refazer com IA' : 'Planear com IA')) + '</button>' +
-       '<button type="button" class="btn" data-act="clear-week">Limpar semana</button></div>' +
+       '<button type="button" class="btn" data-act="clear-week">Limpar semana</button></div></div>' +
        (IA_PLAN.nota ? '<p class="note">IA: ' + esc(IA_PLAN.nota) + '</p>' : '');
   var acc = weekAccepted(S);
   if (planEntries(S).length){
@@ -3498,6 +3504,7 @@ document.addEventListener('change', function(e){
   if (el.id === 'rcCat'){ UI.rc = el.value; render(); return; }
   if (el.id === 'rtSel'){ UI.rt = el.value; render(); return; }
   if (el.id === 'rFit'){ UI.rfit = el.value === '1'; render(); return; }
+  if (el.id === 'tierSel'){ S.tier = el.value === 'all' ? 'all' : Number(el.value); persist(); render(); return; }
   if (el.id === 'inPeople'){ setPeople(parseInt(el.value, 10) || S.people); return; }
   if (el.id === 'inBudget'){ S.budget = Math.max(0, parseFloat(String(el.value).replace(',', '.')) || 0); persist(); render(); return; }
   if (el.id === 'selStore'){ S.store = el.value; persist(); render(); return; }
