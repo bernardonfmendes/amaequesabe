@@ -175,6 +175,16 @@ select.inp{padding-right:8px}
 .flt{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:700;color:var(--ink-2)}
 .flt .inp{width:100%;font-weight:600}
 .filtros .flt:last-child{grid-column:1 / -1}
+.plano-set{display:flex;flex-direction:column;gap:12px;padding:14px;background:var(--card);border:1.5px solid var(--line);border-radius:16px}
+.set-h{display:block;font:600 18px/1.1 var(--f-display);color:var(--ink-2);margin-bottom:2px}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tiles .chip{display:flex;align-items:center;justify-content:space-between;gap:8px;border-radius:12px;padding:10px 12px;min-height:46px;text-align:left;font-size:14px}
+.tiles .chip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--ink)}
+.tiles .chip[aria-pressed="true"]::after{content:"✓";font-weight:800;color:var(--accent)}
+.plano-set .flt{gap:6px}
+.acoes{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.acoes .btn{width:100%;min-height:46px;justify-content:center}
+.acoes .btn.pri{grid-column:1 / -1}
 .chip{border:1.5px solid var(--line-d);background:var(--card);border-radius:999px;padding:6px 14px;font-size:14px;font-weight:700;min-height:38px}
 .chip[aria-pressed="true"]{background:var(--tag);border-color:var(--tag-d);color:var(--on-tag)}
 
@@ -460,7 +470,7 @@ body.gated .tabs, body.gated .ctx, body.gated #sync{display:none}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
   /* Versão desta página. Ao publicar uma versão nova, sobe este número, version.json e o ?v= dos scripts. */
-  var APP_VERSION = 21;
+  var APP_VERSION = 22;
   /* Atualiza a app mesmo quando o telemóvel (Safari, app no ecrã principal) guarda uma versão antiga:
      volta a pedir ao servidor a página e os scripts, e depois recarrega. */
   function atualizarApp(botao){
@@ -510,8 +520,8 @@ body.gated .tabs, body.gated .ctx, body.gated #sync{display:none}
     });
   })();
 </script>
-<script src="config.js?v=21"></script>
-<script src="app.bundle.js?v=21"></script>
+<script src="config.js?v=22"></script>
+<script src="app.bundle.js?v=22"></script>
 <div id="updBanner" role="status" hidden style="position:fixed;left:12px;right:12px;bottom:12px;z-index:50;background:#22293a;color:#fff;border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 24px rgba(0,0,0,.25);font:600 14px/1.3 system-ui,sans-serif">
   <span style="flex:1">Há uma versão nova da app.</span>
   <button type="button" id="updDepois" style="background:none;border:none;color:#fff;opacity:.8;font:inherit;min-height:44px;padding:0 8px">Mais tarde</button>
