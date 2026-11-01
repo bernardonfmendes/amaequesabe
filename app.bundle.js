@@ -1415,7 +1415,9 @@ var TESS_URL = 'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.1/tesser
 var lastFocus = null, toastTimer = null;
 var SB = null, SESSION = null, LOGIN = {email: '', sent: false}, AUTH_READY = false;
 var FAT = null;     /* leitura de fatura em curso: {step, busy, store, items, msg, check, ...} */
-var REMOTE = {ready: false, busy: false, dirty: false, timer: null, pending: false, ch: null, base: 0, note: '', wantToast: false};
+var REMOTE = {ready: false, busy: false, dirty: false, timer: null, pending: false, ch: null, chPrecos: null, base: 0, note: '', wantToast: false, casaId: null, precos: null};
+var ADMIN_EMAIL = 'bernardo.n.f.mendes@gmail.com';   /* só este email altera os preços para todos */
+function isAdmin(){ return !!(SESSION && SESSION.user && SESSION.user.email === ADMIN_EMAIL); }
 
 function $(s, r){ return (r || document).querySelector(s); }
 function $$(s, r){ return Array.prototype.slice.call((r || document).querySelectorAll(s)); }
@@ -1448,6 +1450,10 @@ function backupLocal(){
 /* cada alteração fica guardada neste dispositivo e marcada como "por guardar";
    e segue para a casa automaticamente (scheduleAutoSave) */
 function persist(){
+  if (!isAdmin() && REMOTE.precos && JSON.stringify(S.prices || {}) !== JSON.stringify(REMOTE.precos)){
+    S.prices = clone(REMOTE.precos);
+    toast('Os preços são geridos pelo administrador.');
+  }
   S.savedAt = Date.now();
   saveLocal();
   markUnsynced(true);
@@ -1485,7 +1491,7 @@ function renderSync(){
 function refreshCasa(){
   if (!SESSION){ openSheet({type: 'login'}); return; }
   if (isUnsynced()){ toast('Ainda estou a enviar as tuas alterações. Tenta daqui a uns segundos.'); return; }
-  SB.from('casa').select('state,saved_at').eq('id', 'casa').maybeSingle().then(function(res){
+  SB.from('casa').select('state,saved_at').eq('id', REMOTE.casaId).maybeSingle().then(function(res){
     if (res.error) throw res.error;
     var row = res.data;
     if (!row || !row.state){ toast('A casa ainda não tem dados guardados.'); return; }
@@ -1502,7 +1508,7 @@ function refreshCasa(){
 function pushSafe(){
   if (!SESSION || !REMOTE.ready) return;
   if (REMOTE.busy){ REMOTE.dirty = true; return; }
-  SB.from('casa').select('state,saved_at').eq('id', 'casa').maybeSingle().then(function(res){
+  SB.from('casa').select('state,saved_at').eq('id', REMOTE.casaId).maybeSingle().then(function(res){
     if (res.error) throw res.error;
     var row = res.data;
     if (row && row.state && (row.saved_at || 0) > (REMOTE.base || 0)){
@@ -1520,8 +1526,17 @@ function pushRemote(){
   if (REMOTE.busy){ REMOTE.dirty = true; return; }
   REMOTE.busy = true;
   var at = S.savedAt || Date.now();
-  var row = {id: 'casa', state: clone(S), saved_at: at, updated_by: SESSION.user.email};
-  SB.from('casa').upsert(row).then(function(res){
+  if (!REMOTE.casaId){ REMOTE.busy = false; return; }
+  var st = clone(S); delete st.prices;   /* os preços não ficam na casa: vêm da lista partilhada */
+  var row = {id: REMOTE.casaId, state: st, saved_at: at, updated_by: SESSION.user.email};
+  var envia = SB.from('casa').upsert(row);
+  if (isAdmin()){
+    envia = envia.then(function(r){
+      if (r.error) return r;
+      return SB.from('precos').upsert({id: 'global', state: clone(S.prices || {}), saved_at: at, updated_by: SESSION.user.email});
+    });
+  }
+  envia.then(function(res){
     if (res.error){ setSync('local', syncErr(res.error)); return; }
     REMOTE.base = Math.max(REMOTE.base || 0, at);
     if (S.savedAt === at) markUnsynced(false);   /* se houve edições entretanto, continuam marcadas */
@@ -1536,6 +1551,7 @@ function applyRemote(state, savedAt){
   var el = document.activeElement;
   if (el && /^(INPUT|SELECT|TEXTAREA)$/.test(el.tagName)){ PENDING_REMOTE = {state: state, savedAt: savedAt}; return; }
   S = normalizeState(clone(state));
+  S.prices = clone(REMOTE.precos || {});
   S.savedAt = savedAt;
   REMOTE.base = savedAt;
   rebuildIngIndex(S);
@@ -1558,15 +1574,25 @@ function reconcile(row){
   }
 }
 function pullRemote(){
-  return SB.from('casa').select('state,saved_at').eq('id', 'casa').maybeSingle().then(function(res){
-    if (res.error) throw res.error;
-    reconcile(res.data);
+  return SB.rpc('minha_casa').then(function(r){
+    if (r.error) throw r.error;
+    REMOTE.casaId = r.data;
+    return Promise.all([
+      SB.from('casa').select('state,saved_at').eq('id', REMOTE.casaId).maybeSingle(),
+      SB.from('precos').select('state').eq('id', 'global').maybeSingle()
+    ]);
+  }).then(function(res){
+    if (res[0].error) throw res[0].error;
+    if (res[1].error) throw res[1].error;
+    REMOTE.precos = (res[1].data && res[1].data.state) || {};
+    S.prices = clone(REMOTE.precos);
+    reconcile(res[0].data);
   });
 }
 function subscribeRemote(){
   if (REMOTE.ch) return;
   REMOTE.ch = SB.channel('casa-live').on('postgres_changes',
-    {event: '*', schema: 'public', table: 'casa', filter: 'id=eq.casa'},
+    {event: '*', schema: 'public', table: 'casa', filter: 'id=eq.' + REMOTE.casaId},
     function(p){
       var row = p.new;
       if (!row || !row.state || REMOTE.busy || REMOTE.timer) return;
@@ -1576,6 +1602,18 @@ function subscribeRemote(){
         applyRemote(row.state, row.saved_at);
       }
     }).subscribe();
+  if (!REMOTE.chPrecos){
+    REMOTE.chPrecos = SB.channel('precos-live').on('postgres_changes',
+      {event: '*', schema: 'public', table: 'precos', filter: 'id=eq.global'},
+      function(p){
+        var row = p.new;
+        if (!row || !row.state) return;
+        REMOTE.precos = row.state;
+        S.prices = clone(row.state);
+        saveLocal();
+        render();
+      }).subscribe();
+  }
 }
 function startSync(){
   if (REMOTE.starting || REMOTE.ready) return;
@@ -1595,7 +1633,9 @@ function startSync(){
 }
 function stopSync(){
   REMOTE.ready = false; REMOTE.starting = false;
+  REMOTE.casaId = null; REMOTE.precos = null;
   if (REMOTE.ch && SB){ SB.removeChannel(REMOTE.ch); REMOTE.ch = null; }
+  if (REMOTE.chPrecos && SB){ SB.removeChannel(REMOTE.chPrecos); REMOTE.chPrecos = null; }
 }
 function initRemote(){
   var cfg = window.BC_CONFIG || {};
@@ -2648,11 +2688,19 @@ function saveScan(){
   toast(ing.nome + ' guardado a ' + eur(pp) + ' (' + storeObj(store).curto + ')');
 }
 
+function conviteMembroHTML(){
+  return '<div class="sect" style="margin-top:8px">Convidar para esta casa</div>' +
+    '<p class="note">Quem entrar por este convite fica nesta casa, com a semana, as receitas e a lista.</p>' +
+    '<input class="inp" type="email" autocomplete="email" inputmode="email" placeholder="o.teu@email.com" data-l="convEmail" aria-label="Email para convidar" value="' + esc(LOGIN.convEmail || '') + '">' +
+    '<button type="button" class="btn block" data-act="login-convite">Convidar</button>';
+}
 function sheetLogin(){
   var h = '';
   if (SESSION && !PASS_RECOVERY){
     h += '<p class="note">Estás ligado como <b>' + esc(SESSION.user.email) + '</b>. A semana, as receitas, os preços e a lista são partilhados com quem também estiver ligado à casa.</p>';
     h += '<p class="note">As alterações são guardadas automaticamente. Para veres logo o que os outros guardaram, carrega em <b>Atualizar</b> (no cabeçalho).</p>';
+    h += conviteMembroHTML();
+    if (LOGIN.msg) h += '<p class="note" role="status">' + esc(LOGIN.msg) + '</p>';
     h += '<button type="button" class="btn block" data-act="logout">Sair</button>';
   } else if (PASS_RECOVERY){
     h += '<p class="note">Escolhe a nova palavra-passe (pelo menos 6 caracteres).</p>';

@@ -1,9 +1,9 @@
-// Edge Function "convidar-pessoa": qualquer pessoa com o link pede um convite com o seu email.
-// 1) o email fica autorizado na casa (allowed_emails);
-// 2) recebe um email para criar a palavra-passe (convite novo), ou, se já tiver conta,
-//    um email para a redefinir (mesmo efeito do "Esqueci-me da palavra-passe").
+// Edge Function "convidar-pessoa": pede-se um convite com um email.
+// - Quem pede sem sessão: a pessoa fica com uma casa nova (cópia dos dados atuais).
+// - Quem pede com sessão e já tem casa (um membro): a pessoa entra nessa mesma casa.
+// Em qualquer caso: o email fica autorizado (allowed_emails) e chega um email para criar/definir a palavra-passe.
 // Usa a SERVICE_ROLE_KEY que o Supabase já põe disponível nas Edge Functions (nunca vai para o browser).
-// Deploy com verify_jwt = false (quem pede ainda não tem conta).
+// Deploy com verify_jwt = false (quem pede pode não ter conta).
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 
 const ORIGEM = "https://bernardonfmendes.github.io";
@@ -32,11 +32,31 @@ Deno.serve(async (req) => {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
-  // 1) autorizar o email na casa (idempotente)
-  const { error: erroAut } = await admin.from("allowed_emails").upsert({ email }, { onConflict: "email", ignoreDuplicates: true });
+  // quem convida: se for um membro de uma casa, o convidado entra nessa casa
+  const token = (req.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
+  let casaDeQuemConvida: string | null = null;
+  if (token) {
+    const { data: { user: quem } } = await admin.auth.getUser(token);
+    if (quem) {
+      const { data: membro } = await admin.from("household_members")
+        .select("household_id").eq("user_id", quem.id).maybeSingle();
+      casaDeQuemConvida = membro?.household_id ?? null;
+    }
+  }
+
+  // 1) autorizar o email (idempotente)
+  const { error: erroAut } = await admin.from("allowed_emails")
+    .upsert({ email }, { onConflict: "email", ignoreDuplicates: true });
   if (erroAut) return json({ erro: "Não consegui registar o email. Tenta outra vez." }, 500);
 
-  // 2) convite novo; se a conta já existe, envia o email de definir palavra-passe
+  // 2) convite pendente para a casa de quem convida
+  if (casaDeQuemConvida) {
+    const { error: erroConv } = await admin.from("convites")
+      .upsert({ email, household_id: casaDeQuemConvida }, { onConflict: "email" });
+    if (erroConv) return json({ erro: "Não consegui guardar o convite. Tenta outra vez." }, 500);
+  }
+
+  // 3) convite novo; se a conta já existe, envia o email de definir palavra-passe
   const { error: erroConvite } = await admin.auth.admin.inviteUserByEmail(email, { redirectTo: APP_URL });
   if (erroConvite) {
     const m = erroConvite.message || "";
