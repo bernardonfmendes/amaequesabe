@@ -1,7 +1,8 @@
 // Edge Function "sugerir-receita": a partir da lista de produtos que a casa tem na app (com o preço da loja
 // escolhida) e/ou do que a pessoa escreve que tem em casa ("despensa"), pede ao Gemini uma receita original
-// que caiba no custo. A chave GEMINI_API_KEY fica no Supabase (Secrets).
+// que caiba no custo. A chave (ANTHROPIC_API_KEY ou GEMINI_API_KEY) fica no Supabase (Secrets).
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
+import { pedirTextoIA } from "../_shared/ia.ts";
 
 const ORIGEM = "https://bernardonfmendes.github.io";
 const cors = {
@@ -75,12 +76,6 @@ Deno.serve(async (req) => {
   const norm = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
   const evitarNorm = new Set(evitar.map(norm));
 
-  const chave = Deno.env.get("GEMINI_API_KEY");
-  if (!chave) return json({ erro: "chave não configurada" }, 500);
-  const modelos = [Deno.env.get("GEMINI_MODEL") ?? "gemini-3.8-flash"];
-  const reserva = Deno.env.get("GEMINI_MODEL_RESERVA");
-  if (reserva && reserva !== modelos[0]) modelos.push(reserva);
-
   const avisoEvitar = evitar.length
     ? "\n\nNÃO uses nenhuma destas receitas (já existem ou já foram sugeridas), nem nomes parecidos:\n- " + evitar.join("\n- ")
     : "";
@@ -94,28 +89,10 @@ Deno.serve(async (req) => {
     : "";
   const listaParaIA = produtos.map((p) => ({ id: p.id, nome: p.nome, u: p.u, preço: p.preco }));
   const texto = PROMPT + pedido + avisoEvitar + avisoDespensa + avisoFonte + "\n\nProdutos (JSON):\n" + JSON.stringify(listaParaIA);
-  let resp: Response | null = null;
-  for (const modelo of modelos) {
-    resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-goog-api-key": chave },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: texto }] }],
-        generationConfig: { responseMimeType: "application/json", temperature: 1.1 },
-      }),
-    });
-    if (resp.ok || ![429, 500, 503].includes(resp.status)) break;
-  }
-  if (!resp!.ok) {
-    let detalhe = "";
-    try { detalhe = (await resp!.json())?.error?.message ?? ""; } catch { /* sem detalhe */ }
-    return json({ erro: "o Gemini não respondeu (" + resp!.status + ")" + (detalhe ? ": " + detalhe.slice(0, 300) : "") }, 502);
-  }
-
-  const dados = await resp!.json();
-  const bruto = dados?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+  const ia = await pedirTextoIA(texto, 1.1);
+  if (!ia.ok) return json({ erro: ia.erro }, 502);
   let r: any;
-  try { r = JSON.parse(bruto); } catch { return json({ erro: "resposta inválida do Gemini" }, 502); }
+  try { r = JSON.parse(ia.texto); } catch { return json({ erro: "resposta inválida da IA" }, 502); }
 
   // validação: só ids da lista, quantidades positivas, pelo menos um passo
   const ing = (Array.isArray(r.ing) ? r.ing : [])

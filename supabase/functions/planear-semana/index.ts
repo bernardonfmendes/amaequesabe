@@ -1,7 +1,8 @@
 // Edge Function "planear-semana": a IA escolhe receitas para as refeições VAZIAS da semana.
 // Só pode escolher entre as opções que a app já validou para cada refeição (opcoes), por isso
-// não inventa receitas nem põe pratos onde não cabem. A chave GEMINI_API_KEY fica nos Secrets.
+// não inventa receitas nem põe pratos onde não cabem. A chave (ANTHROPIC_API_KEY ou GEMINI_API_KEY) fica nos Secrets.
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
+import { pedirTextoIA } from "../_shared/ia.ts";
 
 const ORIGEM = "https://bernardonfmendes.github.io";
 const cors = {
@@ -68,12 +69,6 @@ Deno.serve(async (req) => {
 
   const pedido = String(corpo.pedido ?? "").slice(0, 300).replace(/[\r\n]+/g, " ");
 
-  const chave = Deno.env.get("GEMINI_API_KEY");
-  if (!chave) return json({ erro: "chave não configurada" }, 500);
-  const modelos = [Deno.env.get("GEMINI_MODEL") ?? "gemini-3.8-flash"];
-  const reserva = Deno.env.get("GEMINI_MODEL_RESERVA");
-  if (reserva && reserva !== modelos[0]) modelos.push(reserva);
-
   // a IA vê só o necessário: refeições, opções e as receitas referidas
   const usadas = new Set(refeicoes.flatMap((x) => x.opcoes));
   const texto = PROMPT + "\n\n" + JSON.stringify({
@@ -84,28 +79,10 @@ Deno.serve(async (req) => {
     receitas: [...usadas].map((id) => porId.get(id)),
   });
 
-  let resp: Response | null = null;
-  for (const modelo of modelos) {
-    resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-goog-api-key": chave },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: texto }] }],
-        generationConfig: { responseMimeType: "application/json", temperature: 1.0 },
-      }),
-    });
-    if (resp.ok || ![429, 500, 503].includes(resp.status)) break;
-  }
-  if (!resp!.ok) {
-    let detalhe = "";
-    try { detalhe = (await resp!.json())?.error?.message ?? ""; } catch { /* sem detalhe */ }
-    return json({ erro: "o Gemini não respondeu (" + resp!.status + ")" + (detalhe ? ": " + detalhe.slice(0, 300) : "") }, 502);
-  }
-
-  const dados = await resp!.json();
-  const bruto = dados?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+  const ia = await pedirTextoIA(texto, 1.0);
+  if (!ia.ok) return json({ erro: ia.erro }, 502);
   let r: any;
-  try { r = JSON.parse(bruto); } catch { return json({ erro: "resposta inválida da IA" }, 502); }
+  try { r = JSON.parse(ia.texto); } catch { return json({ erro: "resposta inválida da IA" }, 502); }
 
   // validação: só chaves pedidas, só opções permitidas, repetições e limites de grupo, orçamento
   const plano: Record<string, string> = {};
