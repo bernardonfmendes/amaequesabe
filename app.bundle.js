@@ -2864,8 +2864,8 @@ function limparFonte(t){
     .replace(/&#x([0-9a-f]+);/gi, function(m, h){ return String.fromCodePoint(parseInt(h, 16)); })
     .replace(/&#(\d+);/g, function(m, d){ return String.fromCodePoint(Number(d)); })
     .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
-  if (/Instagram:/.test(x)) x = x.replace(/^[\s\S]*?on Instagram:\s*/i, '');
-  x = x.replace(/^\s*[\d.,]+\s+likes?,[^:]*:\s*/i, '');
+  x = x.replace(/^[\s\S]*?(?:on|no) Instagram:\s*/i, '');
+  x = x.replace(/[\d.,]+\s+likes?,\s*[\d.,]+\s+comments?\s+-\s+[^:]{0,80}:\s*/gi, '');
   return x.replace(/\s+/g, ' ').trim();
 }
 function sugerirReceitaIA(pedido, despensa, fonte){
