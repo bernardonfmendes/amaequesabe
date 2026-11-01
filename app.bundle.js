@@ -1927,12 +1927,22 @@ function viewReceitas(){
   var h = '<div class="vh"><h1 class="h2">Receitas</h1><button type="button" class="btn pri sm" data-act="new-recipe">Nova receita</button></div>';
   h += '<div class="stack"><input id="rSearch" class="inp" type="search" placeholder="Procurar receita" aria-label="Procurar receita" value="' + esc(UI.rq) + '">';
   h += '<div class="row wrap"><button type="button" class="btn sm" data-act="ai-recipe-open">Sugerir receita com IA</button></div>';
-  h += '<div class="chips" role="group" aria-label="Filtros">';
+  h += '<div class="filtros">';
+  h += '<label class="flt"><span>Tipo</span><select id="rcCat" class="inp">';
   [{id: 'all', nome: 'Todas'}].concat(RECIPE_CATS).forEach(function(c){
-    h += '<button type="button" class="chip" data-act="rc-cat" data-v="' + c.id + '" aria-pressed="' + (UI.rc === c.id) + '">' + c.nome + '</button>';
+    h += '<option value="' + c.id + '"' + (UI.rc === c.id ? ' selected' : '') + '>' + c.nome + '</option>';
   });
-  h += '<button type="button" class="chip" data-act="rc-fit" aria-pressed="' + UI.rfit + '">Cabem no orçamento</button></div>';
-  h += tierChips('rt-set', UI.rt);
+  h += '</select></label>';
+  h += '<label class="flt"><span>Preço</span><select id="rtSel" class="inp">';
+  h += '<option value="all"' + (String(UI.rt) === 'all' ? ' selected' : '') + '>Todos os preços</option>';
+  TIERS.forEach(function(t){
+    h += '<option value="' + t.n + '"' + (String(UI.rt) === String(t.n) ? ' selected' : '') + '>' + t.sym + ' ' + t.nome + '</option>';
+  });
+  h += '</select></label>';
+  h += '<label class="flt"><span>Orçamento</span><select id="rFit" class="inp">';
+  h += '<option value="0"' + (!UI.rfit ? ' selected' : '') + '>Todas as receitas</option>';
+  h += '<option value="1"' + (UI.rfit ? ' selected' : '') + '>Só as que cabem no orçamento</option>';
+  h += '</select></label></div>';
   h += '<p class="note">' + S.recipes.length + ' receitas · por custo por dose, para ' + S.people + ' ' + plural(S.people, 'pessoa', 'pessoas') + ' · preços: ' + esc(storeObj().curto) +
        '<br>€ até ' + num2(TIER_MAX[0]) + ' · €€ até ' + num2(TIER_MAX[1]) + ' · €€€ acima, por dose</p>';
   h += '<div class="list" id="rList">' + recipeCards() + '</div></div>';
@@ -3343,6 +3353,9 @@ document.addEventListener('change', function(e){
     renderSheet(false);
     return;
   }
+  if (el.id === 'rcCat'){ UI.rc = el.value; render(); return; }
+  if (el.id === 'rtSel'){ UI.rt = el.value; render(); return; }
+  if (el.id === 'rFit'){ UI.rfit = el.value === '1'; render(); return; }
   if (el.id === 'inPeople'){ setPeople(parseInt(el.value, 10) || S.people); return; }
   if (el.id === 'inBudget'){ S.budget = Math.max(0, parseFloat(String(el.value).replace(',', '.')) || 0); persist(); render(); return; }
   if (el.id === 'selStore'){ S.store = el.value; persist(); render(); return; }
