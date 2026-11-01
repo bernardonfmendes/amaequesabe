@@ -1492,7 +1492,7 @@ function renderSync(){
   else if (REMOTE.note && REMOTE.note.indexOf('Sem ligação') === 0) status = '<span>' + esc(REMOTE.note) + '</span>';
   else if (isUnsynced()) status = '<span>A guardar…</span>';
   else status = '<span>Guardado na casa</span>';
-  el.innerHTML = '<span class="sync-txt">' + status.replace(/<\/?span>/g, '') + '</span><div class="sync-acts"><button type="button" class="linkbtn" data-act="casa-atualizar">Receber da casa</button>' + sheetBtn + '</div>';
+  el.innerHTML = '<span class="sync-txt">' + status.replace(/<\/?span>/g, '') + '</span><div class="sync-acts"><button type="button" class="linkbtn" data-act="menu-open">Menu</button></div>';
 }
 /* botão Atualizar: lê a casa e aplica a versão mais recente (só se não houver alterações por guardar) */
 function refreshCasa(){
@@ -2866,7 +2866,21 @@ function sheetGastos(){
   return {title: 'Histórico de gastos', html: h};
 }
 
-var SHEETS = {picker: sheetPicker, recipe: sheetRecipe, editor: sheetEditor, newing: sheetNewIng, editprice: sheetEditPrice, scan: sheetScan, login: sheetLogin, fatura: sheetFatura, aiRecipe: sheetAiRecipe, gastos: sheetGastos, pessoas: sheetPessoas};
+/* menu do cabeçalho: agrupa Receber da casa, Definições e cópias e Procurar nova versão */
+function sheetMenu(){
+  var h = '<div class="stack">';
+  h += '<button type="button" class="btn block" data-act="casa-atualizar">Receber da casa</button>';
+  h += '<p class="note">Traz as alterações que a outra pessoa guardou.</p>';
+  if (SESSION) {
+    h += '<button type="button" class="btn block" data-act="login-open">Definições e cópias</button>';
+    h += '<p class="note">Início de sessão, exportar e importar dados, convidar a outra pessoa.</p>';
+  }
+  h += '<button type="button" class="btn block" id="appRefresh">Procurar nova versão</button>';
+  h += '<p class="note">Recarrega a app com a versão mais recente.</p>';
+  h += '</div>';
+  return {title: 'Menu', html: h};
+}
+var SHEETS = {picker: sheetPicker, recipe: sheetRecipe, editor: sheetEditor, newing: sheetNewIng, editprice: sheetEditPrice, scan: sheetScan, login: sheetLogin, menu: sheetMenu, fatura: sheetFatura, aiRecipe: sheetAiRecipe, gastos: sheetGastos, pessoas: sheetPessoas};
 
 /* ---------- receita sugerida pela IA (só guarda depois de confirmares) ---------- */
 var AIR = null;   /* {state: 'pick' | 'busy' | 'review', draft, pedido, msg} */
@@ -3274,6 +3288,7 @@ var ACTS = {
   'scan-cand': function(el){ SC.price = el.dataset.v; renderSheet(false); },
   'scan-save': saveScan,
   'login-open': function(){ LOGIN.msg = ''; openSheet({type: 'login'}); },
+  'menu-open': function(){ openSheet({type: 'menu'}); },
   'casa-guardar': function(){ pushSafe(); },
   'fat-open': function(){ FAT = {step: 'pick', busy: false, msg: ''}; openSheet({type: 'fatura'}); },
   'fat-save': function(){ faturaSave(); },
