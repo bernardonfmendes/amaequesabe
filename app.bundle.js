@@ -1481,7 +1481,7 @@ function setSync(mode, txt){
 function renderSync(){
   var el = $('#sync');
   if (!el) return;
-  var sheetBtn = '<button type="button" class="linkbtn" data-act="login-open">' + (SESSION ? 'Casa e dados' : 'Partilhar com a casa') + '</button>';
+  var sheetBtn = '<button type="button" class="linkbtn" data-act="login-open">' + (SESSION ? 'Definições e cópias' : 'Partilhar com a casa') + '</button>';
   var note = REMOTE.note ? '<br><span>' + esc(REMOTE.note) + '</span>' : '';
   if (!SB || !SESSION){
     el.innerHTML = sheetBtn + note;
@@ -1492,7 +1492,7 @@ function renderSync(){
   else if (REMOTE.note && REMOTE.note.indexOf('Sem ligação') === 0) status = '<span>' + esc(REMOTE.note) + '</span>';
   else if (isUnsynced()) status = '<span>A guardar…</span>';
   else status = '<span>Guardado na casa</span>';
-  el.innerHTML = status + ' <button type="button" class="linkbtn" data-act="casa-atualizar">Atualizar</button><br>' + sheetBtn;
+  el.innerHTML = '<span class="sync-txt">' + status.replace(/<\/?span>/g, '') + '</span><div class="sync-acts"><button type="button" class="linkbtn" data-act="casa-atualizar">Receber da casa</button>' + sheetBtn + '</div>';
 }
 /* botão Atualizar: lê a casa e aplica a versão mais recente (só se não houver alterações por guardar) */
 function refreshCasa(){
@@ -1522,7 +1522,7 @@ function pushSafe(){
       backupLocal();
       markUnsynced(false);
       applyRemote(row.state, row.saved_at);
-      toast('A casa tinha alterações mais recentes. As tuas ficaram numa cópia de segurança (Casa e dados).');
+      toast('A casa tinha alterações mais recentes. As tuas ficaram numa cópia de segurança (Definições e cópias).');
       return;
     }
     pushRemote();
@@ -2715,7 +2715,7 @@ function sheetLogin(){
   var h = '';
   if (SESSION && !PASS_RECOVERY){
     h += '<p class="note">Estás ligado como <b>' + esc(SESSION.user.email) + '</b>. A semana, as receitas, os preços e a lista são partilhados com quem também estiver ligado à casa.</p>';
-    h += '<p class="note">As alterações são guardadas automaticamente. Para veres logo o que os outros guardaram, carrega em <b>Atualizar</b> (no cabeçalho).</p>';
+    h += '<p class="note">As alterações são guardadas automaticamente. Para veres logo o que os outros guardaram, carrega em <b>Receber da casa</b> (no cabeçalho).</p>';
     h += conviteMembroHTML();
     if (LOGIN.msg) h += '<p class="note" role="status">' + esc(LOGIN.msg) + '</p>';
     h += '<button type="button" class="btn block" data-act="logout">Sair</button>';
@@ -2733,7 +2733,7 @@ function sheetLogin(){
     h += conviteHTML();
   }
   h += backupHTML();
-    return {title: SESSION && !PASS_RECOVERY ? 'Casa e dados' : 'Partilhar com a casa', html: h};
+    return {title: SESSION && !PASS_RECOVERY ? 'Definições e cópias' : 'Partilhar com a casa', html: h};
 }
 
 /* ---------- planeamento com IA (só preenche refeições vazias; o planeador normal fecha o que sobrar) ---------- */
