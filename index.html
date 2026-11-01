@@ -406,7 +406,6 @@ body.gated .tabs, body.gated .ctx, body.gated #sync{display:none}
     </div>
     <div class="top-acts">
       <span id="sync" class="sync" aria-live="polite"></span>
-      <button type="button" id="appRefresh" class="linkbtn" aria-label="Atualizar a app para a versão mais recente">↻ Procurar nova versão</button>
     </div>
   </header>
 
@@ -461,7 +460,7 @@ body.gated .tabs, body.gated .ctx, body.gated #sync{display:none}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
   /* Versão desta página. Ao publicar uma versão nova, sobe este número, version.json e o ?v= dos scripts. */
-  var APP_VERSION = 20;
+  var APP_VERSION = 21;
   /* Atualiza a app mesmo quando o telemóvel (Safari, app no ecrã principal) guarda uma versão antiga:
      volta a pedir ao servidor a página e os scripts, e depois recarrega. */
   function atualizarApp(botao){
@@ -477,8 +476,11 @@ body.gated .tabs, body.gated .ctx, body.gated #sync{display:none}
     });
   }
   (function(){
-    var btn = document.getElementById('appRefresh');
-    if (btn) btn.addEventListener('click', function(){ atualizarApp(btn); });
+    /* o botão "Procurar nova versão" está dentro do Menu (criado depois), por isso usa delegação */
+    document.addEventListener('click', function(e){
+      var btn = e.target && e.target.closest ? e.target.closest('#appRefresh') : null;
+      if (btn) atualizarApp(btn);
+    });
 
     /* Aviso quando existe uma versão mais nova publicada (version.json é pedido sem cache). */
     var banner = document.getElementById('updBanner');
@@ -508,8 +510,8 @@ body.gated .tabs, body.gated .ctx, body.gated #sync{display:none}
     });
   })();
 </script>
-<script src="config.js?v=20"></script>
-<script src="app.bundle.js?v=20"></script>
+<script src="config.js?v=21"></script>
+<script src="app.bundle.js?v=21"></script>
 <div id="updBanner" role="status" hidden style="position:fixed;left:12px;right:12px;bottom:12px;z-index:50;background:#22293a;color:#fff;border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 24px rgba(0,0,0,.25);font:600 14px/1.3 system-ui,sans-serif">
   <span style="flex:1">Há uma versão nova da app.</span>
   <button type="button" id="updDepois" style="background:none;border:none;color:#fff;opacity:.8;font:inherit;min-height:44px;padding:0 8px">Mais tarde</button>
