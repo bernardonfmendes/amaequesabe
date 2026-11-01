@@ -1,6 +1,6 @@
 // Edge Function "sugerir-receita": a partir da lista de produtos que a casa tem na app (com o preço da loja
-// escolhida), pede ao Gemini uma receita original que use SÓ esses produtos e que caiba no custo.
-// A chave GEMINI_API_KEY fica no Supabase (Secrets).
+// escolhida) e/ou do que a pessoa escreve que tem em casa ("despensa"), pede ao Gemini uma receita original
+// que caiba no custo. A chave GEMINI_API_KEY fica no Supabase (Secrets).
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 
 const ORIGEM = "https://bernardonfmendes.github.io";
@@ -51,7 +51,7 @@ Deno.serve(async (req) => {
   const { data: autorizado } = await supa.from("allowed_emails").select("email").eq("email", user.email).maybeSingle();
   if (!autorizado) return json({ erro: "conta não autorizada" }, 403);
 
-  let corpo: { produtos?: { id?: string; nome?: string; u?: string; preco_base?: unknown }[]; pedido?: string; evitar?: string[] };
+  let corpo: { produtos?: { id?: string; nome?: string; u?: string; preco_base?: unknown }[]; pedido?: string; evitar?: string[]; despensa?: string };
   try { corpo = await req.json(); } catch { return json({ erro: "pedido inválido" }, 400); }
 
   // só aceita produtos com id curto e nome simples (limite de tamanho)
@@ -63,7 +63,9 @@ Deno.serve(async (req) => {
       const base = precoBase(p.preco_base);
       return { id: p.id as string, nome: p.nome as string, u, base, preco: precoTexto(u, base) };
     });
-  if (produtos.length < 3) return json({ erro: "poucos produtos na lista" }, 400);
+  // o que a pessoa escreve que tem em casa (texto livre, limitado)
+  const despensa = String(corpo.despensa ?? "").slice(0, 500).replace(/[\r\n]+/g, " ").trim();
+  if (produtos.length < 3 && !despensa) return json({ erro: "poucos produtos na lista" }, 400);
   const porId = new Map(produtos.map((p) => [p.id, p]));
   const pedido = String(corpo.pedido ?? "").slice(0, 300).replace(/[\r\n]+/g, " ");
   const evitar: string[] = (Array.isArray(corpo.evitar) ? corpo.evitar : [])
@@ -80,8 +82,13 @@ Deno.serve(async (req) => {
   const avisoEvitar = evitar.length
     ? "\n\nNÃO uses nenhuma destas receitas (já existem ou já foram sugeridas), nem nomes parecidos:\n- " + evitar.join("\n- ")
     : "";
+  const avisoDespensa = despensa
+    ? "\n\nA pessoa TEM em casa estes ingredientes (texto livre; prioridade máxima, usa-os sobretudo): " + despensa +
+      "\nSe precisares de um ingrediente que NÃO está na lista de produtos, não o inventes em \"ing\": põe-no em \"extra\" como texto (\"nome, quantidade\"). " +
+      "Sal, água, pimenta e azeite podes assumir sem os pôr em \"extra\". Acrescenta \"extra\": [string] à resposta JSON (pode ser lista vazia)."
+    : "";
   const listaParaIA = produtos.map((p) => ({ id: p.id, nome: p.nome, u: p.u, preço: p.preco }));
-  const texto = PROMPT + pedido + avisoEvitar + "\n\nProdutos (JSON):\n" + JSON.stringify(listaParaIA);
+  const texto = PROMPT + pedido + avisoEvitar + avisoDespensa + "\n\nProdutos (JSON):\n" + JSON.stringify(listaParaIA);
   let resp: Response | null = null;
   for (const modelo of modelos) {
     resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`, {
@@ -110,7 +117,8 @@ Deno.serve(async (req) => {
     .filter((x: any) => x && porId.has(String(x.id)) && Number(x.qty) > 0)
     .map((x: any) => ({ id: String(x.id), qty: Math.round(Number(x.qty) * 100) / 100 }));
   const passos = (Array.isArray(r.passos) ? r.passos : []).map((s: any) => String(s).trim()).filter(Boolean);
-  if (ing.length < 2 || !passos.length) return json({ erro: "a IA não devolveu uma receita completa. Tenta outra vez." }, 502);
+  const extra = (Array.isArray(r.extra) ? r.extra : []).map((s: any) => String(s).trim().slice(0, 120)).filter(Boolean).slice(0, 10);
+  if (ing.length + extra.length < 2 || !passos.length) return json({ erro: "a IA não devolveu uma receita completa. Tenta outra vez." }, 502);
 
   const nomeFinal = String(r.nome || "Receita sugerida").slice(0, 80);
   if (evitarNorm.has(norm(nomeFinal))) return json({ erro: "a IA repetiu uma receita que já existe. Tenta outra vez." }, 502);
@@ -131,7 +139,7 @@ Deno.serve(async (req) => {
     tempo: Math.max(0, Math.min(240, Math.round(Number(r.tempo) || 30))),
     doses,
     refeicao: ["ambos", "almoco", "jantar"].includes(r.refeicao) ? r.refeicao : "ambos",
-    ing, passos,
+    ing, passos, extra,
     faltam: (Array.isArray(r.faltam) ? r.faltam : []).map((s: any) => String(s).slice(0, 120)).slice(0, 5),
     custo: Math.round(custo * 100) / 100,
     custo_dose: Math.round((custo / doses) * 100) / 100,

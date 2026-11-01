@@ -2816,7 +2816,7 @@ var SHEETS = {picker: sheetPicker, recipe: sheetRecipe, editor: sheetEditor, new
 /* ---------- receita sugerida pela IA (só guarda depois de confirmares) ---------- */
 var AIR = null;   /* {state: 'pick' | 'busy' | 'review', draft, pedido, msg} */
 var AIR_SUGERIDAS = [];   /* nomes já sugeridos nesta sessão, para a IA não repetir */
-function sugerirReceitaIA(pedido){
+function sugerirReceitaIA(pedido, despensa){
   if (!SB || !SESSION){ toast('Entra na casa para usar a IA.'); return; }
   /* preço por unidade base (€ por g, por ml ou por un) na loja escolhida, para a IA estimar o custo */
   var produtos = allIngs(S).map(function(i){
@@ -2825,9 +2825,9 @@ function sugerirReceitaIA(pedido){
     return {id: i.id, nome: i.nome, u: i.u, preco_base: base};
   });
   var evitar = S.recipes.map(function(r){ return r.nome; }).concat(AIR_SUGERIDAS).slice(-150);
-  AIR = {state: 'busy', pedido: pedido || '', msg: ''};
+  AIR = {state: 'busy', pedido: pedido || '', despensa: despensa || '', msg: ''};
   renderSheet(false);
-  comLimite(SB.functions.invoke('sugerir-receita', {body: {produtos: produtos, pedido: pedido || '', evitar: evitar}}), 90000, 'a IA demorou demasiado a responder')
+  comLimite(SB.functions.invoke('sugerir-receita', {body: {produtos: produtos, pedido: pedido || '', despensa: despensa || '', evitar: evitar}}), 90000, 'a IA demorou demasiado a responder')
     .then(function(res){
       if (!res.error){
         if (!res.data || !Array.isArray(res.data.ing)) throw new Error('a IA devolveu uma resposta vazia');
@@ -2842,14 +2842,15 @@ function sugerirReceitaIA(pedido){
     })
     .then(function(d){
       if (d.nome) AIR_SUGERIDAS.push(d.nome);
-      AIR = {state: 'review', draft: d, pedido: pedido || '', msg: ''}; renderSheet(false);
+      AIR = {state: 'review', draft: d, pedido: pedido || '', despensa: despensa || '', msg: ''}; renderSheet(false);
     })
-    .catch(function(e){ AIR = {state: 'pick', pedido: pedido || '', msg: 'Não consegui sugerir a receita: ' + motivoIA(e) + '.'}; renderSheet(false); });
+    .catch(function(e){ AIR = {state: 'pick', pedido: pedido || '', despensa: despensa || '', msg: 'Não consegui sugerir a receita: ' + motivoIA(e) + '.'}; renderSheet(false); });
 }
 function sheetAiRecipe(){
   if (!AIR || AIR.state === 'pick'){
-    var p = '<p class="note">A IA cria uma receita original só com os produtos que já tens na app. Depois vês tudo e só guarda se quiseres.</p>' +
+    var p = '<p class="note">A IA cria uma receita original com os produtos da app e com o que tens em casa. Depois vês tudo e só guarda se quiseres.</p>' +
       '<div class="field"><label class="lbl" for="aiPedido">O que queres? (opcional)</label><input id="aiPedido" class="inp" maxlength="200" value="' + esc(AIR ? AIR.pedido : '') + '" placeholder="Ex.: algo rápido com frango e legumes"></div>' +
+      '<div class="field"><label class="lbl" for="aiDespensa">O que tens em casa? (opcional)</label><input id="aiDespensa" class="inp" maxlength="300" value="' + esc(AIR ? (AIR.despensa || '') : '') + '" placeholder="Ex.: frango, arroz, 2 ovos, cebola"></div>' +
       '<button type="button" class="btn pri block" data-act="ai-recipe-go">Sugerir receita</button>';
     if (AIR && AIR.msg) p += '<p class="note" role="status">' + esc(AIR.msg) + '</p>';
     return {title: 'Sugerir receita com IA', html: p};
@@ -2870,6 +2871,7 @@ function sheetAiRecipe(){
   });
   h += '</div><div class="sect">Modo de preparação</div><ol class="steps">' + d.passos.map(function(s){ return '<li>' + esc(s) + '</li>'; }).join('') + '</ol>';
   if (d.faltam && d.faltam.length) h += '<p class="note">A IA diz que faltam: ' + esc(d.faltam.join(', ')) + '. Não entram na receita.</p>';
+  if (d.extra && d.extra.length) h += '<p class="note">Também precisas de: ' + esc(d.extra.join(', ')) + '. Estes não estão na app, por isso não entram na receita guardada.</p>';
   h += '<button type="button" class="btn pri block" data-act="ai-recipe-save">Guardar receita</button>';
   h += '<button type="button" class="btn block" data-act="ai-recipe-go">Pedir outra sugestão</button>';
   h += '<button type="button" class="btn block" data-act="ai-recipe-discard">Descartar</button>';
@@ -3220,7 +3222,8 @@ var ACTS = {
   'ai-recipe-open': function(){ AIR = {state: 'pick', pedido: '', msg: ''}; openSheet({type: 'aiRecipe'}); },
   'ai-recipe-go': function(){
     var inp = document.getElementById('aiPedido');
-    sugerirReceitaIA(inp ? inp.value.trim() : (AIR && AIR.pedido) || '');
+    var dsp = document.getElementById('aiDespensa');
+    sugerirReceitaIA(inp ? inp.value.trim() : (AIR && AIR.pedido) || '', dsp ? dsp.value.trim() : (AIR && AIR.despensa) || '');
   },
   'ai-recipe-save': saveAiRecipe,
   'ai-recipe-discard': function(){ AIR = null; closeSheet(); },
