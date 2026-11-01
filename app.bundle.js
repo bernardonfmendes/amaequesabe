@@ -2858,7 +2858,18 @@ var SHEETS = {picker: sheetPicker, recipe: sheetRecipe, editor: sheetEditor, new
 /* ---------- receita sugerida pela IA (só guarda depois de confirmares) ---------- */
 var AIR = null;   /* {state: 'pick' | 'busy' | 'review', draft, pedido, msg} */
 var AIR_SUGERIDAS = [];   /* nomes já sugeridos nesta sessão, para a IA não repetir */
+/* limpa texto colado ou lido de uma página: códigos HTML, cabeçalho e contagens do Instagram */
+function limparFonte(t){
+  var x = String(t || '')
+    .replace(/&#x([0-9a-f]+);/gi, function(m, h){ return String.fromCodePoint(parseInt(h, 16)); })
+    .replace(/&#(\d+);/g, function(m, d){ return String.fromCodePoint(Number(d)); })
+    .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+  if (/Instagram:/.test(x)) x = x.replace(/^[\s\S]*?on Instagram:\s*/i, '');
+  x = x.replace(/^\s*[\d.,]+\s+likes?,[^:]*:\s*/i, '');
+  return x.replace(/\s+/g, ' ').trim();
+}
 function sugerirReceitaIA(pedido, despensa, fonte){
+  fonte = limparFonte(fonte);
   if (!SB || !SESSION){ toast('Entra na casa para usar a IA.'); return; }
   /* preço por unidade base (€ por g, por ml ou por un) na loja escolhida, para a IA estimar o custo */
   var produtos = allIngs(S).map(function(i){
@@ -2869,7 +2880,7 @@ function sugerirReceitaIA(pedido, despensa, fonte){
   var evitar = S.recipes.map(function(r){ return r.nome; }).concat(AIR_SUGERIDAS).slice(-150);
   AIR = {state: 'busy', pedido: pedido || '', despensa: despensa || '', fonte: fonte || '', msg: ''};
   renderSheet(false);
-  comLimite(SB.functions.invoke('sugerir-receita', {body: {produtos: produtos, pedido: pedido || '', despensa: despensa || '', fonte: fonte || '', evitar: evitar}}), 90000, 'a IA demorou demasiado a responder')
+  comLimite(SB.functions.invoke('sugerir-receita', {body: {produtos: produtos, pedido: pedido || '', despensa: despensa || '', fonte: fonte || '', evitar: evitar}}), 150000, 'a IA demorou demasiado a responder')
     .then(function(res){
       if (!res.error){
         if (!res.data || !Array.isArray(res.data.ing)) throw new Error('a IA devolveu uma resposta vazia');
