@@ -741,6 +741,18 @@ function isMainDish(rec){ return rec.cat !== 'sopa' && rec.cat !== 'peq'; }
 function hasProtein(rec){ return protLevel(recipeNutri(rec)) > 0; }
 /* legacy.js — assinatura (ingredientes) das receitas da app antes de serem corrigidas por razões de nutrição.
    Serve para atualizar só as cópias que o utilizador não alterou. */
+/* novos cortes e acompanhamentos (preços recolhidos a 1 nov 2026, sem promoção, +2% de margem) */
+ING = ING.concat([
+  {id:'pa',            nome:'Pá de porco com osso',          cat:'talho', u:'g', pack:1000, step:250, srcQty:1000, src:{continente:4.58, pingodoce:4.58}},
+  {id:'alcatra',       nome:'Alcatra de novilho (bife)',     cat:'talho', u:'g', pack:1000, step:250, srcQty:1000, src:{continente:19.37}},
+  {id:'estufar',       nome:'Carne para estufar de bovino',  cat:'talho', u:'g', pack:1000, step:250, srcQty:1000, src:{auchan:13.25}},
+  {id:'asas',          nome:'Asas de frango',                cat:'talho', u:'g', pack:1000, step:250, srcQty:1000, src:{continente:2.85, pingodoce:2.95}},
+  {id:'arrozintegral', nome:'Arroz integral',                cat:'merc',  u:'g', pack:1000, srcQty:1000, src:{continente:1.51, pingodoce:1.11}},
+  {id:'feijaopretolata',nome:'Feijão preto cozido em lata (escorrido)', cat:'merc', u:'g', pack:500, srcQty:1000, src:{continente:4.77, pingodoce:3.90}},
+  {id:'pureflocos',    nome:'Puré de batata em flocos',      cat:'merc',  u:'g', pack:500, srcQty:1000, src:{continente:4.67, auchan:4.67}},
+  {id:'purelei',       nome:'Puré de batata com leite',      cat:'merc',  u:'g', pack:200, srcQty:1000, src:{pingodoce:8.87}}
+]);
+
 var LEGACY_ING = { "r-bolonhesa": "[[\"esparguete\",320],[\"carnepicada\",250],[\"cenoura\",150],[\"cebola\",150],[\"alho\",2],[\"pelado\",400],[\"azeite\",25],[\"queijo\",30],[\"sal\",3]]",
   "r-sopa": "[[\"batata\",400],[\"cenoura\",200],[\"abobora\",300],[\"couve\",200],[\"cebola\",100],[\"alho\",1],[\"feijao\",150],[\"azeite\",25],[\"pao\",160],[\"sal\",4]]",
   "r-arroz-tomate": "[[\"arroz\",300],[\"pelado\",400],[\"cebola\",120],[\"alho\",2],[\"ovos\",4],[\"azeite\",30],[\"caldo\",1],[\"sal\",3]]",
