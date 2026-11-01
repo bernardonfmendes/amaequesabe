@@ -1128,7 +1128,7 @@ function defaultState(){
     soup: {almoco: true, jantar: true},
     plan: samplePlan(), example: true, acceptedSig: null, eanMap: {},
     recipes: clone(RECIPES), customIngs: [], prices: {},
-    shop: {have: {}, bought: {}, extras: []},
+    shop: {have: {}, bought: {}, extras: []}, compras: [],
     savedAt: 0
   };
 }
@@ -1146,7 +1146,10 @@ function normalizeState(s){
   if (!s || typeof s !== 'object') return d;
   var o = {};
   o.v = 1;
-  o.people = Math.min(12, Math.max(1, Math.round(Number(s.people) || d.people)));
+  o.pessoas = Array.isArray(s.pessoas) && s.pessoas.length ? s.pessoas.slice(0, 12).map(function(p, i){
+    return {nome: String((p && p.nome) || ('Pessoa ' + (i + 1))).slice(0, 30), peso: [0.5, 1, 1.5, 2].indexOf(Number(p && p.peso)) >= 0 ? Number(p.peso) : 1};
+  }) : null;
+  o.people = o.pessoas ? Math.min(12, Math.max(0.5, somaPesos(o.pessoas))) : Math.min(12, Math.max(1, Math.round(Number(s.people) || d.people)));
   o.budget = Number(s.budget) >= 0 ? Number(s.budget) : d.budget;
   o.store = STORES.some(function(x){ return x.id === s.store; }) ? s.store : 'ref';
   o.slots = {peq: !!(s.slots && s.slots.peq), almoco: !(s.slots && s.slots.almoco === false), jantar: !(s.slots && s.slots.jantar === false)};
@@ -1186,6 +1189,7 @@ function normalizeState(s){
   });
   var sh = s.shop || {};
   o.shop = {have: sh.have || {}, bought: sh.bought || {}, extras: Array.isArray(sh.extras) ? sh.extras : []};
+  o.compras = Array.isArray(s.compras) ? s.compras.slice(-3000) : [];
   o.savedAt = Number(s.savedAt) || 0;
   /* uma sopa que ficou num prato principal passa para a sua linha */
   Object.keys(o.plan).forEach(function(k){
@@ -2096,7 +2100,7 @@ function viewLista(){
   }
 
   h += '<div class="row wrap"><button type="button" class="btn pri" data-act="copy-list">Copiar lista</button>' +
-       '<button type="button" class="btn" data-act="reset-bought">Desmarcar tudo</button></div>';
+       '<button type="button" class="btn" data-act="reset-bought">Desmarcar tudo</button><button type="button" class="btn" data-act="gastos-open">Histórico de gastos</button></div>';
   h += '</div>';
   return h;
 }
@@ -2811,12 +2815,50 @@ function planearSemanaIA(){
     });
 }
 
-var SHEETS = {picker: sheetPicker, recipe: sheetRecipe, editor: sheetEditor, newing: sheetNewIng, editprice: sheetEditPrice, scan: sheetScan, login: sheetLogin, fatura: sheetFatura, aiRecipe: sheetAiRecipe};
+/* histórico de gastos: cada artigo marcado como comprado fica com o preço e a data desse momento */
+function marcarIngComprado(ingId, on){
+  S.shop.bought[ingId] = on;
+  var linha = shoppingList(S, S.store).items.filter(function(i){ return i.ing.id === ingId; })[0];
+  var ing = IMAP[ingId];
+  marcarCompra('ing', ingId, on, ing ? ing.nome : ingId, linha && linha.cost > 0 ? round2(linha.cost) : 0);
+}
+function marcarCompra(campo, chave, on, nome, valor){
+  if (!S.compras) S.compras = [];
+  if (on){
+    S.compras.push({campo: campo, chave: chave, nome: nome, valor: valor > 0 ? round2(valor) : 0, data: Date.now()});
+    return;
+  }
+  for (var k = S.compras.length - 1; k >= 0; k--){
+    if (S.compras[k].campo === campo && S.compras[k].chave === chave){ S.compras.splice(k, 1); break; }
+  }
+}
+function inicioSemana(t){ var x = new Date(t); x.setHours(0, 0, 0, 0); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x.getTime(); }
+function inicioMes(t){ var x = new Date(t); x.setHours(0, 0, 0, 0); x.setDate(1); return x.getTime(); }
+function somaCompras(desde){
+  return (S.compras || []).reduce(function(a, c){ return c.data >= desde ? a + (c.valor || 0) : a; }, 0);
+}
+function sheetGastos(){
+  var agora = Date.now();
+  var semana = somaCompras(inicioSemana(agora)), mes = somaCompras(inicioMes(agora));
+  var recentes = (S.compras || []).slice().reverse().slice(0, 40);
+  var h = '<div class="stack"><div class="ln"><span class="nm">Esta semana</span><span class="lead"></span><span class="pr">' + eur(semana) + '</span></div>' +
+    '<div class="ln"><span class="nm">Este mês</span><span class="lead"></span><span class="pr">' + eur(mes) + '</span></div></div>';
+  h += '<p class="note">Regista-se o que marcas como comprado na lista, ao preço da loja nesse momento. Desmarcar tira a compra do histórico.</p>';
+  h += '<div class="sect">Últimas compras</div><div class="stack">';
+  if (!recentes.length) h += '<p class="note">Ainda não há compras registadas.</p>';
+  recentes.forEach(function(c){
+    h += '<div class="ln"><span class="nm">' + esc(c.nome) + '</span><span class="lead"></span><span class="mono">' + new Date(c.data).toLocaleDateString('pt-PT') + ' · ' + eur(c.valor || 0) + '</span></div>';
+  });
+  h += '</div>';
+  return {title: 'Histórico de gastos', html: h};
+}
+
+var SHEETS = {picker: sheetPicker, recipe: sheetRecipe, editor: sheetEditor, newing: sheetNewIng, editprice: sheetEditPrice, scan: sheetScan, login: sheetLogin, fatura: sheetFatura, aiRecipe: sheetAiRecipe, gastos: sheetGastos, pessoas: sheetPessoas};
 
 /* ---------- receita sugerida pela IA (só guarda depois de confirmares) ---------- */
 var AIR = null;   /* {state: 'pick' | 'busy' | 'review', draft, pedido, msg} */
 var AIR_SUGERIDAS = [];   /* nomes já sugeridos nesta sessão, para a IA não repetir */
-function sugerirReceitaIA(pedido, despensa){
+function sugerirReceitaIA(pedido, despensa, fonte){
   if (!SB || !SESSION){ toast('Entra na casa para usar a IA.'); return; }
   /* preço por unidade base (€ por g, por ml ou por un) na loja escolhida, para a IA estimar o custo */
   var produtos = allIngs(S).map(function(i){
@@ -2825,9 +2867,9 @@ function sugerirReceitaIA(pedido, despensa){
     return {id: i.id, nome: i.nome, u: i.u, preco_base: base};
   });
   var evitar = S.recipes.map(function(r){ return r.nome; }).concat(AIR_SUGERIDAS).slice(-150);
-  AIR = {state: 'busy', pedido: pedido || '', despensa: despensa || '', msg: ''};
+  AIR = {state: 'busy', pedido: pedido || '', despensa: despensa || '', fonte: fonte || '', msg: ''};
   renderSheet(false);
-  comLimite(SB.functions.invoke('sugerir-receita', {body: {produtos: produtos, pedido: pedido || '', despensa: despensa || '', evitar: evitar}}), 90000, 'a IA demorou demasiado a responder')
+  comLimite(SB.functions.invoke('sugerir-receita', {body: {produtos: produtos, pedido: pedido || '', despensa: despensa || '', fonte: fonte || '', evitar: evitar}}), 90000, 'a IA demorou demasiado a responder')
     .then(function(res){
       if (!res.error){
         if (!res.data || !Array.isArray(res.data.ing)) throw new Error('a IA devolveu uma resposta vazia');
@@ -2842,15 +2884,39 @@ function sugerirReceitaIA(pedido, despensa){
     })
     .then(function(d){
       if (d.nome) AIR_SUGERIDAS.push(d.nome);
-      AIR = {state: 'review', draft: d, pedido: pedido || '', despensa: despensa || '', msg: ''}; renderSheet(false);
+      AIR = {state: 'review', draft: d, pedido: pedido || '', despensa: despensa || '', fonte: fonte || '', msg: ''}; renderSheet(false);
     })
-    .catch(function(e){ AIR = {state: 'pick', pedido: pedido || '', despensa: despensa || '', msg: 'Não consegui sugerir a receita: ' + motivoIA(e) + '.'}; renderSheet(false); });
+    .catch(function(e){ AIR = {state: 'pick', pedido: pedido || '', despensa: despensa || '', fonte: fonte || '', msg: 'Não consegui sugerir a receita: ' + motivoIA(e) + '.'}; renderSheet(false); });
+}
+/* lê o link (ler-link) e depois pede à IA uma receita adaptada aos produtos da app */
+function lerLinkEReceita(link, base){
+  if (!SB || !SESSION){ toast('Entra na casa para usar a IA.'); return; }
+  AIR = {state: 'busy', pedido: base.pedido, despensa: base.despensa, fonte: '', msg: ''};
+  renderSheet(false);
+  comLimite(SB.functions.invoke('ler-link', {body: {url: link}}), 30000, 'o link demorou demasiado')
+    .then(function(res){
+      if (!res.error) return res.data && res.data.texto;
+      var ctx = res.error.context;
+      return Promise.resolve(ctx && ctx.json ? ctx.json().catch(function(){ return {}; }) : {}).then(function(j){
+        throw new Error(j.erro || 'não consegui ler o link');
+      });
+    })
+    .then(function(texto){
+      if (!texto) throw new Error('não consegui ler o link. Cola o texto da receita.');
+      sugerirReceitaIA(base.pedido, base.despensa, texto);
+    })
+    .catch(function(e){
+      AIR = {state: 'pick', pedido: base.pedido, despensa: base.despensa, fonte: '', msg: (e && e.message) || 'Não consegui ler o link.'};
+      renderSheet(false);
+    });
 }
 function sheetAiRecipe(){
   if (!AIR || AIR.state === 'pick'){
-    var p = '<p class="note">A IA cria uma receita original com os produtos da app e com o que tens em casa. Depois vês tudo e só guarda se quiseres.</p>' +
+    var p = '<p class="note">A IA cria uma receita original com os produtos da app e com o que tens em casa, ou adapta uma receita que encontres online. Depois vês tudo e só guarda se quiseres.</p>' +
       '<div class="field"><label class="lbl" for="aiPedido">O que queres? (opcional)</label><input id="aiPedido" class="inp" maxlength="200" value="' + esc(AIR ? AIR.pedido : '') + '" placeholder="Ex.: algo rápido com frango e legumes"></div>' +
       '<div class="field"><label class="lbl" for="aiDespensa">O que tens em casa? (opcional)</label><input id="aiDespensa" class="inp" maxlength="300" value="' + esc(AIR ? (AIR.despensa || '') : '') + '" placeholder="Ex.: frango, arroz, 2 ovos, cebola"></div>' +
+      '<div class="field"><label class="lbl" for="aiLink">Link de uma receita (opcional)</label><input id="aiLink" class="inp" type="url" maxlength="500" inputmode="url" placeholder="https://..."></div>' +
+      '<div class="field"><label class="lbl" for="aiFonte">Ou cola o texto da receita (opcional)</label><textarea id="aiFonte" class="inp" rows="4" maxlength="4000" placeholder="Ingredientes e passos, ou a legenda do vídeo">' + esc(AIR ? (AIR.fonte || '') : '') + '</textarea></div>' +
       '<button type="button" class="btn pri block" data-act="ai-recipe-go">Sugerir receita</button>';
     if (AIR && AIR.msg) p += '<p class="note" role="status">' + esc(AIR.msg) + '</p>';
     return {title: 'Sugerir receita com IA', html: p};
@@ -3063,7 +3129,33 @@ function faturaSave(){
 }
 
 /* ---------- ações ---------- */
+/* pessoas e porções: cada pessoa tem um peso (0,5 criança pequena, 1 adulto, 1,5 ou 2 para quem come mais);
+   o total é o número de porções que as receitas e a lista usam */
+function somaPesos(l){ return l.reduce(function(a, p){ return a + p.peso; }, 0); }
+function sincronizaPessoas(){
+  S.people = Math.min(12, Math.max(0.5, somaPesos(S.pessoas || [])));
+  persist(); render();
+  if (SH && SH.type === 'pessoas') renderSheet(false);
+}
+function sheetPessoas(){
+  if (!S.pessoas) S.pessoas = Array.from({length: Math.max(1, Math.round(S.people))}, function(_, i){ return {nome: 'Adulto ' + (i + 1), peso: 1}; });
+  var fmt = function(x){ return String(x).replace('.', ','); };
+  var h = '<p class="note">Cada pessoa conta como 1 porção (adulto), 0,5 (criança pequena), ou 1,5 e 2 para quem come mais. As quantidades das receitas e da lista ajustam-se ao total.</p>';
+  h += '<div class="stack">';
+  S.pessoas.forEach(function(p, i){
+    h += '<div class="ln"><input class="inp" style="flex:1" maxlength="30" value="' + esc(p.nome) + '" data-pn="' + i + '" aria-label="Nome da pessoa ' + (i + 1) + '">' +
+      '<div class="step"><button type="button" data-act="pessoa-peso" data-i="' + i + '" data-d="-0.5" aria-label="Diminuir porção">&minus;</button>' +
+      '<span class="mono" style="min-width:2.5em;text-align:center">' + fmt(p.peso) + '</span>' +
+      '<button type="button" data-act="pessoa-peso" data-i="' + i + '" data-d="0.5" aria-label="Aumentar porção">+</button></div>' +
+      (S.pessoas.length > 1 ? '<button type="button" class="linkbtn" data-act="pessoa-del" data-i="' + i + '">Remover</button>' : '') + '</div>';
+  });
+  h += '</div>';
+  if (S.pessoas.length < 12) h += '<button type="button" class="btn block" data-act="pessoa-add">Adicionar pessoa</button>';
+  h += '<p class="note">Total: ' + fmt(S.people) + ' porções. Se mudares o número com + e −, a lista volta a adultos.</p>';
+  return {title: 'Pessoas e porções', html: h};
+}
 function setPeople(n){
+  S.pessoas = null;
   S.people = Math.min(12, Math.max(1, Math.round(n) || 1));
   persist(); render();
 }
@@ -3219,11 +3311,27 @@ var ACTS = {
   },
   'edit-recipe': function(){ openEditor(SH.id); },
   'new-recipe': function(){ openEditor(null); },
+  'gastos-open': function(){ openSheet({type: 'gastos'}); },
+  'pessoas-open': function(){ openSheet({type: 'pessoas'}); },
+  'pessoa-add': function(){ if (!S.pessoas) S.pessoas = []; S.pessoas.push({nome: 'Pessoa ' + (S.pessoas.length + 1), peso: 1}); sincronizaPessoas(); },
+  'pessoa-del': function(el){ if (S.pessoas && S.pessoas.length > 1){ S.pessoas.splice(Number(el.dataset.i), 1); sincronizaPessoas(); } },
+  'pessoa-peso': function(el){
+    var p = S.pessoas && S.pessoas[Number(el.dataset.i)];
+    if (!p) return;
+    p.peso = Math.min(2, Math.max(0.5, p.peso + Number(el.dataset.d)));
+    sincronizaPessoas();
+  },
   'ai-recipe-open': function(){ AIR = {state: 'pick', pedido: '', msg: ''}; openSheet({type: 'aiRecipe'}); },
   'ai-recipe-go': function(){
-    var inp = document.getElementById('aiPedido');
-    var dsp = document.getElementById('aiDespensa');
-    sugerirReceitaIA(inp ? inp.value.trim() : (AIR && AIR.pedido) || '', dsp ? dsp.value.trim() : (AIR && AIR.despensa) || '');
+    var g = function(id){ var el = document.getElementById(id); return el ? el.value.trim() : null; };
+    var pedido = g('aiPedido'), despensa = g('aiDespensa'), link = g('aiLink'), fonte = g('aiFonte');
+    var base = {
+      pedido: pedido !== null ? pedido : (AIR && AIR.pedido) || '',
+      despensa: despensa !== null ? despensa : (AIR && AIR.despensa) || '',
+      fonte: fonte !== null ? fonte : (AIR && AIR.fonte) || ''
+    };
+    if (link && !base.fonte){ lerLinkEReceita(link, base); return; }
+    sugerirReceitaIA(base.pedido, base.despensa, base.fonte);
   },
   'ai-recipe-save': saveAiRecipe,
   'ai-recipe-discard': function(){ AIR = null; closeSheet(); },
@@ -3346,13 +3454,18 @@ document.addEventListener('change', function(e){
     renderSheet(false);
     return;
   }
+  if (el.dataset && el.dataset.pn !== undefined){
+    var q = S.pessoas && S.pessoas[Number(el.dataset.pn)];
+    if (q){ q.nome = el.value.slice(0, 30); persist(); }
+    return;
+  }
   if (el.id === 'inPeople'){ setPeople(parseInt(el.value, 10) || S.people); return; }
   if (el.id === 'inBudget'){ S.budget = Math.max(0, parseFloat(String(el.value).replace(',', '.')) || 0); persist(); render(); return; }
   if (el.id === 'selStore'){ S.store = el.value; persist(); render(); return; }
   if (el.classList && el.classList.contains('pinput')){ return; }   /* grava só ao carregar em Guardar */
-  if (el.dataset && el.dataset.act === 'bought'){ S.shop.bought[el.dataset.id] = el.checked; persist(); render(); return; }
+  if (el.dataset && el.dataset.act === 'bought'){ marcarIngComprado(el.dataset.id, el.checked); persist(); render(); return; }
   if (el.dataset && el.dataset.act === 'ex-bought'){
-    S.shop.extras.forEach(function(x){ if (x.id === el.dataset.id) x.bought = el.checked; });
+    S.shop.extras.forEach(function(x){ if (x.id === el.dataset.id){ x.bought = el.checked; marcarCompra('extra', x.id, el.checked, x.nome, x.preco); } });
     persist(); render();
   }
 });

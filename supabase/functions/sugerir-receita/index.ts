@@ -51,7 +51,7 @@ Deno.serve(async (req) => {
   const { data: autorizado } = await supa.from("allowed_emails").select("email").eq("email", user.email).maybeSingle();
   if (!autorizado) return json({ erro: "conta não autorizada" }, 403);
 
-  let corpo: { produtos?: { id?: string; nome?: string; u?: string; preco_base?: unknown }[]; pedido?: string; evitar?: string[]; despensa?: string };
+  let corpo: { produtos?: { id?: string; nome?: string; u?: string; preco_base?: unknown }[]; pedido?: string; evitar?: string[]; despensa?: string; fonte?: string };
   try { corpo = await req.json(); } catch { return json({ erro: "pedido inválido" }, 400); }
 
   // só aceita produtos com id curto e nome simples (limite de tamanho)
@@ -65,7 +65,9 @@ Deno.serve(async (req) => {
     });
   // o que a pessoa escreve que tem em casa (texto livre, limitado)
   const despensa = String(corpo.despensa ?? "").slice(0, 500).replace(/[\r\n]+/g, " ").trim();
-  if (produtos.length < 3 && !despensa) return json({ erro: "poucos produtos na lista" }, 400);
+  // receita de origem (texto de uma página ou legenda) que se quer adaptar aos produtos da app
+  const fonte = String(corpo.fonte ?? "").slice(0, 4000).trim();
+  if (produtos.length < 3 && !despensa && !fonte) return json({ erro: "poucos produtos na lista" }, 400);
   const porId = new Map(produtos.map((p) => [p.id, p]));
   const pedido = String(corpo.pedido ?? "").slice(0, 300).replace(/[\r\n]+/g, " ");
   const evitar: string[] = (Array.isArray(corpo.evitar) ? corpo.evitar : [])
@@ -87,8 +89,11 @@ Deno.serve(async (req) => {
       "\nSe precisares de um ingrediente que NÃO está na lista de produtos, não o inventes em \"ing\": põe-no em \"extra\" como texto (\"nome, quantidade\"). " +
       "Sal, água, pimenta e azeite podes assumir sem os pôr em \"extra\". Acrescenta \"extra\": [string] à resposta JSON (pode ser lista vazia)."
     : "";
+  const avisoFonte = fonte
+    ? "\n\nAdapta a receita ORIGINAL abaixo (texto de uma página ou de uma legenda). Mantém o prato e o espírito dela, mas usa os produtos da lista (pelo \"id\"). Ingredientes que não existem na lista vão para \"extra\" como texto (\"nome, quantidade\"). Pode omitir o que não é comida. Acrescenta \"extra\": [string] à resposta JSON.\n--- RECEITA ORIGINAL ---\n" + fonte + "\n--- FIM ---"
+    : "";
   const listaParaIA = produtos.map((p) => ({ id: p.id, nome: p.nome, u: p.u, preço: p.preco }));
-  const texto = PROMPT + pedido + avisoEvitar + avisoDespensa + "\n\nProdutos (JSON):\n" + JSON.stringify(listaParaIA);
+  const texto = PROMPT + pedido + avisoEvitar + avisoDespensa + avisoFonte + "\n\nProdutos (JSON):\n" + JSON.stringify(listaParaIA);
   let resp: Response | null = null;
   for (const modelo of modelos) {
     resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`, {
