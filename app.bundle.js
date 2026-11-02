@@ -1228,6 +1228,7 @@ function normalizeState(s){
   var sh = s.shop || {};
   o.shop = {have: sh.have || {}, bought: sh.bought || {}, extras: Array.isArray(sh.extras) ? sh.extras : []};
   o.compras = Array.isArray(s.compras) ? s.compras.slice(-3000) : [];
+  o.vistaLista = s.vistaLista === 'loja' ? 'loja' : 'tipo';
   o.savedAt = Number(s.savedAt) || 0;
   /* uma sopa que ficou num prato principal passa para a sua linha */
   Object.keys(o.plan).forEach(function(k){
@@ -2032,6 +2033,30 @@ function listText(sl){
   return lines.join('\n');
 }
 /* ---------- plano por loja: cada artigo onde está mais barato ---------- */
+function listaPorLoja(toBuy){
+  var lojas = STORES.filter(function(s){ return s.id !== 'ref' && storeHasData(s.id, S); });
+  var cache = {};
+  lojas.forEach(function(s){ cache[s.id] = shoppingList(S, s.id).items; });
+  var grupos = {};
+  toBuy.forEach(function(it){
+    var opts = lojas.filter(function(s){ return hasStorePrice(it.ing, s.id, S); }).map(function(s){
+      var m = cache[s.id].filter(function(x){ return x.ing.id === it.ing.id; })[0];
+      return {id: s.id, cost: m ? m.cost : Infinity};
+    }).filter(function(o){ return o.cost < Infinity; }).sort(function(a, b){ return a.cost - b.cost; });
+    var best = opts[0] || {id: 'sem', cost: it.cost};
+    (grupos[best.id] = grupos[best.id] || []).push({it: it, cost: best.cost});
+  });
+  var ids = Object.keys(grupos).sort(function(a, b){ return grupos[b].length - grupos[a].length; });
+  var h = '<p class="note">Cada artigo está na loja onde é mais barato. Vais a ' + ids.length + (ids.length === 1 ? ' loja.' : ' lojas.') + '</p>';
+  ids.forEach(function(id){
+    var lst = grupos[id].slice().sort(function(a, b){ return a.it.ing.nome.localeCompare(b.it.ing.nome, 'pt'); });
+    var sub = lst.reduce(function(a, x){ return a + x.cost; }, 0);
+    var nome = id === 'sem' ? 'Sem preço em nenhuma loja' : ((STORES.filter(function(s){ return s.id === id; })[0] || {}).curto || id);
+    h += '<div><div class="sect">' + esc(nome) + ' · ' + eur(sub) + '</div><div class="card" style="padding-top:4px;padding-bottom:4px">' +
+      lst.map(function(x){ return liRow(x.it); }).join('') + '</div></div>';
+  });
+  return h;
+}
 function planoPorLoja(toBuy){
   var lojas = STORES.filter(function(s){ return s.id !== 'ref' && storeHasData(s.id, S); });
   if (lojas.length < 2 || !toBuy.length) return '';
@@ -2104,13 +2129,20 @@ function viewLista(){
        '<div class="stat"><div class="k">Já comprados</div><div class="v">' + done + '/' + toBuy.length + '</div></div></div></section>';
   h += '<div class="row wrap acoes-lista"><button type="button" class="btn pri" data-act="copy-list">Copiar lista</button>' +
        '<button type="button" class="btn" data-act="reset-bought">Desmarcar tudo</button><button type="button" class="btn" data-act="gastos-open">Histórico de semanas</button></div>';
+  var lojasOk = STORES.filter(function(s){ return s.id !== 'ref' && storeHasData(s.id, S); }).length >= 2;
+  var vista = (S.vistaLista === 'loja' && lojasOk) ? 'loja' : 'tipo';
+  if (lojasOk){
+    h += '<div class="row wrap" role="group" aria-label="Ordenar a lista" style="margin-bottom:12px">' +
+      '<button type="button" class="btn' + (vista === 'tipo' ? ' pri' : '') + '" aria-pressed="' + (vista === 'tipo') + '" data-act="lista-vista" data-v="tipo">Por tipo de produto</button>' +
+      '<button type="button" class="btn' + (vista === 'loja' ? ' pri' : '') + '" aria-pressed="' + (vista === 'loja') + '" data-act="lista-vista" data-v="loja">Por supermercado</button></div>';
+  }
   if (S.store !== 'ref' && !storeHasData(S.store, S)){
     h += '<div class="banner" role="note"><span>Ainda sem preços de ' + esc(storeObj().curto) + '. Estes valores usam a média de Continente, Pingo Doce e Auchan. Escreve os preços da loja na secção Preços.</span>' +
          '<button type="button" class="btn ghost sm" data-act="tab" data-tab="precos">Preços</button></div>';
   }
   h += '<p class="note">Compra-se a embalagem inteira, por isso paga-se um pouco mais do que se consome. O que sobra fica em casa para as próximas semanas.</p>';
 
-  CATS.forEach(function(c){
+  if (vista === 'loja') { h += listaPorLoja(toBuy); } else CATS.forEach(function(c){
     var its = toBuy.filter(function(i){ return i.ing.cat === c.id; })
       .sort(function(a, b){ return a.ing.nome.localeCompare(b.ing.nome, 'pt'); });
     if (!its.length) return;
@@ -2135,7 +2167,7 @@ function viewLista(){
     h += '<div><div class="sect">Já tenho em casa</div><div class="card" style="padding-top:4px;padding-bottom:4px">' + haveIts.map(liRow).join('') + '</div></div>';
   }
 
-  h += planoPorLoja(toBuy);
+  if (vista !== 'loja') h += planoPorLoja(toBuy);
   /* comparar supermercados */
   var cmp = STORES.filter(function(s){ return s.id !== 'ref' && storeHasData(s.id, S); }).map(function(s){
     var t = shoppingList(S, s.id);
@@ -3293,6 +3325,7 @@ function copyText(t){
 }
 
 var ACTS = {
+  'lista-vista': function(el){ S.vistaLista = el.dataset.v === 'loja' ? 'loja' : 'tipo'; persist(); render(); },
   'tab': function(el){ VIEW = el.dataset.tab; render(); window.scrollTo(0, 0); },
   'go-semana': function(){ VIEW = 'semana'; render(); window.scrollTo(0, 0); },
   'p-dec': function(){ setPeople(S.people - 1); },
