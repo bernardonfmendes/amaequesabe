@@ -2154,7 +2154,7 @@ function viewLista(){
   }
 
   h += '<div class="row wrap"><button type="button" class="btn pri" data-act="copy-list">Copiar lista</button>' +
-       '<button type="button" class="btn" data-act="reset-bought">Desmarcar tudo</button><button type="button" class="btn" data-act="gastos-open">Histórico de gastos</button></div>';
+       '<button type="button" class="btn" data-act="reset-bought">Desmarcar tudo</button><button type="button" class="btn" data-act="gastos-open">Histórico de semanas</button></div>';
   h += '</div>';
   return h;
 }
@@ -2894,17 +2894,32 @@ function somaCompras(desde){
 function sheetGastos(){
   var agora = Date.now();
   var semana = somaCompras(inicioSemana(agora)), mes = somaCompras(inicioMes(agora));
-  var recentes = (S.compras || []).slice().reverse().slice(0, 40);
+  var grupos = {};
+  (S.compras || []).forEach(function(c){
+    var k = inicioSemana(c.data);
+    if (!grupos[k]) grupos[k] = {t: 0, n: 0, itens: []};
+    grupos[k].t += c.valor || 0; grupos[k].n += 1; grupos[k].itens.push(c);
+  });
+  var semanas = Object.keys(grupos).map(Number).sort(function(a, b){ return b - a; });
   var h = '<div class="stack"><div class="ln"><span class="nm">Esta semana</span><span class="lead"></span><span class="pr">' + eur(semana) + '</span></div>' +
     '<div class="ln"><span class="nm">Este mês</span><span class="lead"></span><span class="pr">' + eur(mes) + '</span></div></div>';
-  h += '<p class="note">Regista-se o que marcas como comprado na lista, ao preço da loja nesse momento. Desmarcar tira a compra do histórico.</p>';
-  h += '<div class="sect">Últimas compras</div><div class="stack">';
-  if (!recentes.length) h += '<p class="note">Ainda não há compras registadas.</p>';
-  recentes.forEach(function(c){
-    h += '<div class="ln"><span class="nm">' + esc(c.nome) + '</span><span class="lead"></span><span class="mono">' + new Date(c.data).toLocaleDateString('pt-PT') + ' · ' + eur(c.valor || 0) + '</span></div>';
+  h += '<p class="note">Cada semana mostra o total gasto. Toca numa semana para ver as compras. Regista-se o que marcas como comprado na lista, ao preço da loja nesse momento.</p>';
+  h += '<div class="sect">Semanas</div><div class="stack">';
+  if (!semanas.length) h += '<p class="note">Ainda não há compras registadas.</p>';
+  semanas.forEach(function(k){
+    var g = grupos[k];
+    var titulo = 'Semana de ' + new Date(k).toLocaleDateString('pt-PT', {day: 'numeric', month: 'short', year: 'numeric'});
+    h += '<details class="hist"><summary class="ln" style="list-style:none;cursor:pointer"><span class="nm">' + esc(titulo) +
+      '<span class="sub" style="display:block">' + g.n + (g.n === 1 ? ' artigo' : ' artigos') + '</span></span>' +
+      '<span class="lead"></span><span class="pr">' + eur(g.t) + '</span></summary><div class="stack">';
+    g.itens.sort(function(a, b){ return b.data - a.data; }).forEach(function(c){
+      h += '<div class="ln"><span class="nm">' + esc(c.nome) + '</span><span class="lead"></span><span class="mono">' +
+        new Date(c.data).toLocaleDateString('pt-PT') + ' · ' + eur(c.valor || 0) + '</span></div>';
+    });
+    h += '</div></details>';
   });
   h += '</div>';
-  return {title: 'Histórico de gastos', html: h};
+  return {title: 'Histórico de semanas', html: h};
 }
 
 /* menu do cabeçalho: agrupa Receber da casa, Definições e cópias e Procurar nova versão */
