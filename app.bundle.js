@@ -2099,14 +2099,16 @@ function viewLista(){
     h += '<div class="verdict ok">Dentro do orçamento semanal.</div>';
   }
   h += '<div class="stats">' +
-       '<div class="stat"><div class="k">Food cost</div><div class="v">' + eur(sl.foodCost) + '</div></div>' +
+       '<div class="stat"><div class="k">Custo das refeições</div><div class="v">' + eur(sl.foodCost) + '</div></div>' +
        '<div class="stat"><div class="k">Fica em casa</div><div class="v">' + eur(sl.leftover) + '</div></div>' +
-       '<div class="stat"><div class="k">Comprados</div><div class="v">' + done + '/' + toBuy.length + '</div></div></div></section>';
+       '<div class="stat"><div class="k">Já comprados</div><div class="v">' + done + '/' + toBuy.length + '</div></div></div></section>';
+  h += '<div class="row wrap acoes-lista"><button type="button" class="btn pri" data-act="copy-list">Copiar lista</button>' +
+       '<button type="button" class="btn" data-act="reset-bought">Desmarcar tudo</button><button type="button" class="btn" data-act="gastos-open">Histórico de semanas</button></div>';
   if (S.store !== 'ref' && !storeHasData(S.store, S)){
     h += '<div class="banner" role="note"><span>Ainda sem preços de ' + esc(storeObj().curto) + '. Estes valores usam a média de Continente, Pingo Doce e Auchan. Escreve os preços da loja na secção Preços.</span>' +
          '<button type="button" class="btn ghost sm" data-act="tab" data-tab="precos">Preços</button></div>';
   }
-  h += '<p class="note">Compras-se a embalagem inteira (ou o peso mínimo nos produtos vendidos ao peso), por isso paga-se mais do que se consome. O que sobra serve nas semanas seguintes.</p>';
+  h += '<p class="note">Compra-se a embalagem inteira, por isso paga-se um pouco mais do que se consome. O que sobra fica em casa para as próximas semanas.</p>';
 
   CATS.forEach(function(c){
     var its = toBuy.filter(function(i){ return i.ing.cat === c.id; })
@@ -2153,8 +2155,6 @@ function viewLista(){
     h += '</div><p class="note" style="margin-top:8px">Os artigos sem preço de uma loja usam a média, por isso a diferença pode estar subestimada. Toca numa loja para a usares.</p></div>';
   }
 
-  h += '<div class="row wrap"><button type="button" class="btn pri" data-act="copy-list">Copiar lista</button>' +
-       '<button type="button" class="btn" data-act="reset-bought">Desmarcar tudo</button><button type="button" class="btn" data-act="gastos-open">Histórico de semanas</button></div>';
   h += '</div>';
   return h;
 }
