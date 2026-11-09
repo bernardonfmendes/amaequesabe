@@ -925,6 +925,38 @@ function aplicaAtivos(state, guardar){
 }
 /* ao abrir, usa a última leitura guardada neste dispositivo (funciona sem ligação) */
 (function(){ try { var raw = localStorage.getItem(ATIVOS_KEY); if (raw) aplicaAtivos(JSON.parse(raw), false); } catch (e) {} })();
+/* ---------- preços do agente semanal (linha "lojas" da tabela precos) ----------
+   A função "agente-precos" lê todas as semanas as páginas de categoria do Continente, Pingo Doce e Auchan
+   e escolhe, para cada ingrediente, o produto mais barato por kg, litro ou unidade. Estes preços substituem
+   os de loja do livro (incluindo os do Ativos.pt); os preços manuais continuam a ter prioridade. */
+var LOJAS_KEY = 'budgetchef.lojas';
+var AGENTE = null;                                     /* {atualizado, ings} quando há preços aplicados */
+var PRODUTO_LOJA = {continente: {}, pingodoce: {}, auchan: {}};   /* produto escolhido: {p: nome, u: url, q, pr} */
+function aplicaLojas(state, guardar){
+  if (!state || !state.lojas) return 0;
+  var feitos = {};
+  ['continente', 'pingodoce', 'auchan'].forEach(function(sid){
+    var m = state.lojas[sid] || {};
+    Object.keys(m).forEach(function(id){
+      var d = m[id];
+      if (!d || !(d.v > 0) || d.v > 500) return;
+      BOOK[sid][id] = round2(d.v);
+      PRODUTO_LOJA[sid][id] = {p: String(d.p || ''), u: d.u || null, q: d.q, pr: d.pr};
+      feitos[id] = true;
+    });
+  });
+  Object.keys(feitos).forEach(function(id){
+    var vals = ['continente', 'pingodoce', 'auchan'].map(function(sid){ return BOOK[sid][id]; }).filter(function(v){ return v != null; });
+    if (vals.length) BOOK.ref[id] = round2(media(vals));
+  });
+  var n = Object.keys(feitos).length;
+  if (n){
+    AGENTE = {atualizado: String(state.atualizado || '').slice(0, 10), ings: n};
+    if (guardar){ try { localStorage.setItem(LOJAS_KEY, JSON.stringify(state)); } catch (e) {} }
+  }
+  return n;
+}
+(function(){ try { var raw = localStorage.getItem(LOJAS_KEY); if (raw) aplicaLojas(JSON.parse(raw), false); } catch (e) {} })();
 var MESES_PT = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
 function dataPt(iso){
   var m = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
@@ -932,6 +964,8 @@ function dataPt(iso){
 }
 /* frase sobre a origem dos preços, para a secção Preços */
 function notaOrigemPrecos(){
+  if (AGENTE) return 'atualizados todas as semanas nos sites das lojas em ' + AGENTE.ings +
+         ' ingredientes (última leitura: ' + dataPt(AGENTE.atualizado) + '); os restantes são da recolha de 17 de outubro de 2026';
   if (!ATIVOS) return 'recolhidos a 17 de outubro de 2026';
   return 'atualizados todas as semanas a partir dos preços online do Ativos.pt em ' + ATIVOS.ings +
          ' ingredientes (última leitura: ' + dataPt(ATIVOS.atualizado) + '); os restantes são da recolha de 17 de outubro de 2026';
@@ -1695,13 +1729,15 @@ function pullRemote(){
     return Promise.all([
       SB.from('casa').select('state,saved_at').eq('id', REMOTE.casaId).maybeSingle(),
       SB.from('precos').select('state').eq('id', 'global').maybeSingle(),
-      SB.from('precos').select('state').eq('id', 'ativos').maybeSingle()
+      SB.from('precos').select('state').eq('id', 'ativos').maybeSingle(),
+      SB.from('precos').select('state').eq('id', 'lojas').maybeSingle()
     ]);
   }).then(function(res){
     if (res[0].error) throw res[0].error;
     if (res[1].error) throw res[1].error;
     /* preços online da semana (se falhar, a app continua com os preços que já tem) */
     if (res[2] && !res[2].error && res[2].data && res[2].data.state) aplicaAtivos(res[2].data.state, true);
+    if (res[3] && !res[3].error && res[3].data && res[3].data.state) aplicaLojas(res[3].data.state, true);
     REMOTE.precos = (res[1].data && res[1].data.state) || {};
     S.prices = clone(REMOTE.precos);
     reconcile(res[0].data);
@@ -2306,6 +2342,14 @@ function viewLista(){
 
 /* ---------- vista: Preços ---------- */
 var SRC_LABEL = {manual: 'manual', loja: 'loja', media: 'média', mediana: 'média', est: 'estimativa'};
+/* nome do produto que o agente encontrou nesta loja (e ligação para a página da loja) */
+function produtoLojaHtml(i, p){
+  var d = p.src === 'loja' && PRODUTO_LOJA[S.store] && PRODUTO_LOJA[S.store][i.id];
+  if (!d || !d.p) return '';
+  var u = d.u && /^https:\/\/www\.(continente|pingodoce|auchan)\.pt\//.test(d.u) ? d.u : null;
+  return '<div class="ps prod-loja">' + esc(d.p) + (d.pr ? ' · ' + eur(d.pr) : '') +
+         (u ? ' · <a href="' + esc(u) + '" target="_blank" rel="noopener noreferrer">ver na loja</a>' : '') + '</div>';
+}
 function priceRows(){
   var q = norm(UI.pq), out = '', any = false;
   CATS.forEach(function(c){
@@ -2318,7 +2362,7 @@ function priceRows(){
       var p = packPrice(i, S.store, S), cls = p.src === 'manual' ? ' man' : (p.src === 'est' ? ' est' : '');
       out += '<div class="prow"><div><span class="pn">' + esc(i.nome) + '</span><span class="src' + cls + '">' + SRC_LABEL[p.src] + '</span>' +
              '<div class="ps">' + fmtQty(i.pack, i.u) + ' · ' + unitPriceLabel(i, p.v) +
-             '</div></div>' +
+             '</div>' + produtoLojaHtml(i, p) + '</div>' +
              '<span class="pedit"><span class="pval">' + eur(p.v) + '</span><button type="button" class="btn sm" data-act="price-edit" data-id="' + esc(i.id) + '" aria-label="Editar ' + esc(i.nome) + '">Editar</button></span></div>';
     });
     out += '</div></div>';
