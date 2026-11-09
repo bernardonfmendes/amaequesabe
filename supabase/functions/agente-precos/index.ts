@@ -133,7 +133,7 @@ async function categorias(loja: string): Promise<string[]> {
 }
 
 // ---------- correspondência ingrediente -> produto ----------
-type Ing = { id: string; nome: string; u: string; pack: number; palavras: string[]; alguma: string[] | null; excluir: string[]; ref_base: number | null };
+type Ing = { id: string; nome: string; u: string; pack: number; palavras: string[]; alguma: string[] | null; excluir: string[]; ref_base: number | null; inicio?: string[] | null };
 // palavra obrigatória: igual ou com até 2 letras a mais (plural); expressão com espaços: tem de aparecer seguida
 const tem = (toks: string[], p: string) => p.includes(" ") ? (" " + toks.join(" ") + " ").includes(" " + p + " ") || (" " + toks.join(" ") + " ").includes(" " + p) : toks.some((t) => t === p || (t.startsWith(p) && t.length - p.length <= 2));
 // palavra a excluir: apanha todas as variações ("congel" -> "congelados"); as muito curtas (até 3 letras) só exatas
@@ -142,7 +142,26 @@ const tira = (toks: string[], p: string) => p.includes(" ") ? (" " + toks.join("
 const GERAIS = ["noodles", "instantane", "sabor", "aroma", "racao", "alimento", "pate", "snack", "granola", "barra", "nestum", "gelado",
   "refeicao", "tempero", "fiambre", "toucinho", "barrinha", "douradinho", "croquete", "rissol", "nugget", "panad", "batido", "sumo", "nectar",
   "compota", "doce de", "creme de", "manteiga de", "bolacha", "cereais", "iogurte", "pudim", "mousse", "tarte", "bolo", "pizza", "sandes",
-  "tosta", "wrap", "sopa", "chips", "pipocas", "infusao", "cha de", "licor", "gomas", "chocolate", "biscoito", "papa", "bebe", "infantil"];
+  "tosta", "wrap", "sopa", "chips", "pipocas", "infusao", "cha de", "licor", "gomas", "chocolate", "biscoito", "papa", "bebe", "infantil",
+  "mistura", "salteado", "quiche", "crepe", "kefir", "gelatina", "boiao", "passata", "caldeirada", "crocante", "hamburguer"];
+// O tipo de produto vem no início do nome ("Bacalhau Graúdo", "Dourada Fresca"). Antes da palavra principal só podem
+// aparecer: marcas das lojas, palavras do próprio ingrediente (ex.: "Queijo" em "Queijo Flamengo"), as indicadas em
+// "inicio" e algumas palavras de apresentação. Assim "Pastéis de Bacalhau" ou "Quiche de Salmão" ficam de fora.
+const LIGACOES = new Set(["de", "da", "do", "das", "dos", "e", "com", "em", "para", "a", "o", "ao", "as", "os", "c"]);
+const MARCAS = new Set(["auchan", "continente", "pingo", "essencial", "equilibrio", "bio", "biologico", "biologica", "selecao", "pack", "familiar", "polegar", "gourmet"]);
+const APRESENTACAO = ["mix", "miolo", "posta", "postas", "lombos", "file", "files", "filetes", "tiras", "raiz", "folha", "folhas", "bebida", "vegetal", "massa"];
+export function comecaBem(ing: Ing, toks: string[]): boolean {
+  const chave = ing.palavras.length ? [ing.palavras[0]] : (ing.alguma || []).map((a) => a.split(" ")[0]);
+  const livres = [...APRESENTACAO, ...norm(ing.nome).split(" "), ...(ing.inicio || [])];
+  let vistos = 0;
+  for (const t of toks) {
+    if (LIGACOES.has(t) || MARCAS.has(t)) continue;
+    if (chave.some((k) => t === k || (t.startsWith(k) && t.length - k.length <= 2))) return true;
+    if (!livres.some((l) => t === l || t === l + "s" || t === l + "es")) return false;
+    if (++vistos >= 4) return false;
+  }
+  return false;
+}
 // lista geral aplicável a um ingrediente: sem as palavras que ele próprio usa
 export function geraisDe(ing: Ing): string[] {
   const proprios = [...norm(ing.nome).split(" "), ...ing.palavras, ...(ing.alguma || [])].join(" ");
@@ -153,6 +172,8 @@ export function escolhe(ing: Ing, prods: { nome: string; n: string[]; preco: num
   for (const p of prods) {
     if (p.unidade !== ing.u || !(p.preco_base! > 0)) continue;
     if (!ing.palavras.every((w) => tem(p.n, w))) continue;
+    // os ingredientes criados nas casas têm nomes curtos de fatura ("Babybel 6x"), por isso não se exige o início do nome
+    if (!(ing as any)._casa && !comecaBem(ing, p.n)) continue;
     if (ing.alguma && ing.alguma.length && !ing.alguma.some((w) => tem(p.n, w))) continue;
     if (ing.excluir.some((w) => tira(p.n, w))) continue;
     if ((ing as any)._gerais.some((w: string) => tira(p.n, w))) continue;
@@ -228,7 +249,7 @@ Deno.serve(async (req) => {
       const pal = palavrasDe(String(ci.nome || ""));
       if (!pal.length) continue;
       vistosIds.add(ci.id);
-      lista.push({ id: ci.id, nome: ci.nome, u: ci.u, pack: Number(ci.pack), palavras: pal.slice(0, 2), alguma: null, excluir: [], ref_base: Number(ci.est) > 0 ? Number(ci.est) / Number(ci.pack) : null });
+      lista.push({ id: ci.id, nome: ci.nome, u: ci.u, pack: Number(ci.pack), palavras: pal.slice(0, 2), alguma: null, excluir: [], ref_base: Number(ci.est) > 0 ? Number(ci.est) / Number(ci.pack) : null, _casa: true } as Ing);
     }
     const lojas: Record<string, Record<string, any>> = { continente: {}, auchan: {}, pingodoce: {} };
     let total = 0;

@@ -17,6 +17,11 @@ lê só páginas de categoria (sem pesquisa interna, paginação nem ordenação
 Um produto só é aceite se o preço por kg/l/un estiver entre 40 % e 250 % do preço de referência do ingrediente.
 Os ingredientes novos criados na app (`customIngs`) entram automaticamente, com palavras tiradas do nome.
 
+Além disso, a palavra principal tem de aparecer no início do nome do produto (antes dela só marcas, palavras do
+próprio ingrediente, palavras de apresentação como "posta" ou "filetes", e as indicadas em `inicio`). Assim
+"Pastéis de Bacalhau", "Quiche de Salmão" ou "Sementes de Linhaça Dourada" não contam como bacalhau, salmão ou dourada.
+Há também uma lista geral de palavras que excluem sempre (preparados, sobremesas, misturas, etc.).
+
 ## Recolher já, à mão (SQL Editor)
 ```sql
 select public.agente_iniciar();   -- põe as páginas na fila; o passo de cada minuto faz o resto

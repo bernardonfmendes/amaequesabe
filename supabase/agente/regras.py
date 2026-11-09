@@ -12,7 +12,7 @@ R = {
  'ovos': (['ovo'], None, ['codorniz','chocolate','pascoa','cozid','liquid','clara','gema','kinder','moles']),
  'peitofrango': (['peito','frango'], None, ['panad','fatiad','grelh','assad','fumad','cozid','nugget','tira','marinad','rechead','temperad','hamburguer','espetada','cordon']),
  'carnepicada': (['picada'], ['vaca','bovino','novilho','bovina'], ['porco','mista','aves','frango','peru','hamburguer','almondega']),
- 'pescada': (['pescada'], None, ['panad','croquete','bacalhau','pastel','bolinho','rissol','sopa','paella']),
+ 'pescada': (['pescada'], None, ['panad','croquete','bacalhau','pastel','bolinho','rissol','sopa','paella','ovo']),
  'batata': (['batata'], None, ['doce','frit','palha','pure','chips','congel','gomos','assar','camponesa','rosti','croquete','salada','sopa','flocos','noisette','bravas','wedge','rustica']),
  'cebola': (['cebola'], None, ['roxa','frit','congel','cubos','po','picada','crispy','doce','sopa','alho','aneis','caramelizada']),
  'cenoura': (['cenoura'], None, ['ralada','baby','palito','congel','sopa','sumo','pure','bolo']),
@@ -28,14 +28,14 @@ R = {
  'limao': (['limao'], None, ['sumo','ice','tea','bebida','refrigerante','raspa','agua','bolacha','iogurte','tarte','gelado','sabor']),
  'salsa': (['salsa'], None, ['seca','desidratada','congel','frasco','picada','salsicha','molho de']),
  'alface': (['alface'], None, ['mistura','mix','salada']),
- 'espinafres': (['espinafre'], None, ['congel','creme','esparregado','folhado','natas','pizza','massa']),
+ 'espinafres': (['espinafre'], None, ['congel','creme','esparregado','folhado','natas','pizza','massa','bonduelle']),
  'brocolos': (['brocolo'], None, ['congel','creme','sopa','bimi']),
  'couve': (['couve'], None, ['flor','bruxelas','roxa','congel','ralada','sopa','kale','chinesa','pak']),
  'abobora': (['abobora'], None, ['sopa','creme','congel','doce','pevide','semente','pure']),
  'coxas': (['frango'], ['coxa','perna'], ['panad','assad','grelh','marinad','temperad','fumad','asa','peito','churrasco','espetada']),
  'febras': (['febra'], None, ['frango','peru','panad','marinad','temperad']),
  'chourico': (['chourico'], None, ['vegetal','frango','peru','pao','fatiado','batata','bolo']),
- 'bacalhau': (['bacalhau'], None, ['pastel','bolinho','desfiado','demolhado','congel','bras','pataniscas','espiritual','gratinado','natas','lasanha','bacalhoa']),
+ 'bacalhau': (['bacalhau'], None, ['pastel','bolinho','desfiado','demolhad','ultracongel','congel','bras','pataniscas','espiritual','gratinado','natas','lasanha','bacalhoa']),
  'natas': (['natas'], None, ['batidas','chantilly','vegetal','spray','soja','aveia','bacalhau','espinafres','molho']),
  'queijo': (['queijo','ralado'], None, ['parmesao','grana','mozzarella','vegetal','pizza','mozzarela','mozarela','mistura']),
  'aveia': (['aveia'], ['floco'], ['bebida','biscoito','bolacha','barra','granola','papa','farelo']),
@@ -50,7 +50,7 @@ R = {
  'acucar': (['acucar'], None, ['mascavado','amarelo','cana','glace','baunilha','em po','sem acucar','bolacha','stevia','pacotes','saquetas','areia de','moreno']),
  'oleo': (['oleo'], ['vegetal','girassol','alimentar','amendoim','soja','milho'], ['azeite','coco','sesamo','spray','atum','sardinha']),
  'iogurte': (['iogurte','natural'], None, ['grego','aroma','morango','liquido','bebida','vegetal','soja','skyr','frutos','pedacos','cereais','mel','kefir']),
- 'flamengo': (['flamengo'], None, ['sandes','bola','light','tostas']),
+ 'flamengo': (['flamengo'], None, ['sandes','bola','light','tostas','ralad']),
  'fiambre': (['fiambre'], None, ['peru','frango','aves','tostas','sandes']),
  'lombo': (['lombo','porco'], None, ['assado','fumado','fatiado','temperado','recheado','panado','preto']),
  'laranja': (['laranja'], None, ['sumo','nectar','compota','doce','bebida','refrigerante','sabor','bolo','gelado','raspa']),
@@ -67,15 +67,15 @@ R = {
  'dourada': (['dourada'], None, ['filete panado']),
  'polvo': (['polvo'], None, ['cozido','lata','salada','grelhado','arroz','lagareiro']),
  'camarao': (['camarao'], None, ['cozido','panado','rissol','bolinho','salada','tempura','sopa','molho','chips','snack']),
- 'lulas': (['lula'], None, ['panad','aneis','sabor','calamares','recheada','lata','frita']),
+ 'lulas': (['lula'], None, ['panad','aneis','sabor','calamares','recheada','lata','frita','crocant']),
  'mexilhao': (['mexilhao'], None, ['lata','escabeche','conserva','molho']),
  'ameijoas': (['ameijoa'], None, ['lata','conserva']),
  'carapau': (['carapau'], None, ['lata','frito','escabeche']),
  'sardinha': (['sardinha'], None, ['lata','conserva','oleo','azeite','tomate','pate','molho','fumada','picante']),
  'cogumelos': (['cogumelo'], None, ['lata','congel','frasco','conserva','creme','shiitake','seco','desidratad','sopa','risotto','molho']),
  'courgete': ([], ['courgete','curgete','abobrinha'], ['congel','espiral','esparguete','grelhad']),
- 'beringela': ([], ['beringela','berinjela'], ['grelhada','pate','congel']),
- 'pimento': (['pimento'], None, ['vermelho','amarelo','assado','padron','lata','frasco','recheado','tricolor','mini','doce']),
+ 'beringela': ([], ['beringela','berinjela'], ['grelhad','pate','congel','mistura']),
+ 'pimento': (['pimento'], None, ['vermelho','amarelo','assado','padron','lata','frasco','recheado','tricolor','mini','doce','padrao']),
  'pepino': (['pepino'], None, ['conserva','frasco','vinagre','pickle','mini']),
  'feijaoverde': (['feijao','verde'], None, ['congel','lata','frasco']),
  'abacate': (['abacate'], None, ['guacamole','pasta','oleo','mini']),
@@ -104,7 +104,7 @@ R = {
  'kiwi': (['kiwi'], None, ['sumo','gold']),
  'uvas': (['uva'], None, ['passa','sumo','vinho']),
  'morangos': (['morango'], None, ['sumo','iogurte','compota','gelado','doce','congel','sabor','bolacha']),
- 'pessego': (['pessego'], None, ['lata','calda','sumo','nectar','compota','iogurte','gelado']),
+ 'pessego': (['pessego'], None, ['lata','calda','sumo','nectar','compota','iogurte','gelado','metade']),
  'espargos': (['espargo'], None, ['lata','frasco','conserva','congel','creme']),
  'aipo': (['aipo'], None, ['semente','sal']),
  'rucula': (['rucula'], None, ['mistura','mix']),
@@ -131,14 +131,14 @@ R = {
  'queijofresco': (['queijo','fresco'], None, ['barrar','creme','cottage','requeijao','fatiado','light']),
  'requeijao': (['requeijao'], None, ['doce','abobora','queijada']),
  'ricota': ([], ['ricota','ricotta'], []),
- 'queijoserra': (['queijo','serra'], None, ['fatiado','tostas']),
+ 'queijoserra': (['queijo','serra','estrela'], None, ['fatiado','tostas']),
  'parmesao': ([], ['parmesao','grana','parmigiano'], ['molho','bolacha','pesto']),
  'leiteamendoa': (['amendoa'], ['bebida','leite'], ['chocolate','iogurte','farinha','torrada','cacau','caf']),
  'iogurtegrego': (['iogurte','grego'], None, ['aroma','morango','mel','frutos','cereja','cereais','limao','manga','baunilha','coco','framboesa','pessego','stracciatella','ananas']),
  'arrozcarolino': (['arroz','carolino'], None, ['vaporizado','integral','doce','pronto']),
  'bolachamaria': (['bolacha','maria'], None, ['chocolate','integral','canela','sem acucar','creme']),
- 'mel': (['mel'], None, ['bolacha','cereais','iogurte','mostarda','molho','rebucado','melao','melancia','caramelo','meloa','amendoa']),
- 'chocolate': (['chocolate'], ['culinaria','pastelaria','cozinhar','sobremesa','culinario'], ['bolacha','cereais','bebida','creme','po','pepitas']),
+ 'mel': (['mel'], None, ['bolacha','cereais','iogurte','mostarda','molho','rebucado','melao','melancia','caramelo','meloa','amendoa','amendoim','kefir']),
+ 'chocolate': (['chocolate'], ['culinaria','pastelaria','cozinhar','culinario'], ['bolacha','cereais','bebida','creme','po','pepitas']),
  'cacau': (['cacau'], ['po','magro','puro'], ['bolacha','manteiga','cereais','creme','nibs','bebida','instantaneo','achocolatado','barra','chocolate']),
  'fermento': (['fermento'], None, ['padeiro','pao','farinha','seco','fresco','sem fermento']),
  'bicarbonato': (['bicarbonato'], None, ['limpeza','lavar']),
@@ -175,7 +175,7 @@ R = {
  'arrozintegral': (['arroz','integral'], None, ['bolacha','tortita','galete','bebida','pronto','cereais']),
  'feijaopretolata': (['feijao','preto'], ['cozido','lata','frasco'], []),
  'pureflocos': (['pure','batata'], ['floco','instantaneo','desidratado'], ['congel']),
- 'purelei': (['pure','batata'], None, ['floco','instantaneo','congel','desidratado']),
+ 'purelei': (['pure','batata'], None, ['floco','instantaneo','congel','desidratado','doce']),
  'coelho': (['coelho'], None, ['pate','chocolate']),
  'peruinteiro': (['peito','peru'], None, ['fatiado','fumado','assado','panado','fiambre']),
  'bulgur': (['bulgur'], None, ['salada','refeicao']),
@@ -185,6 +185,9 @@ R = {
  'espinafrescong': (['espinafre'], ['congel','ultracongel'], ['creme','esparregado','natas','folhado','pizza']),
  'batatacong': (['batata'], ['pre frita','prefrita','fritar','palito','palitos','congel','ultracongel'], ['doce','rosti','croquete','pure','gomos','assar','camponesa']),
 }
+# palavras que podem aparecer ANTES da palavra principal no nome do produto (ex.: "Queijo Mozzarella", "Uva Passa")
+INICIO = {'cereais': ['corn','flakes','cereais'], 'mozzarella': ['queijo'], 'ricota': ['queijo'], 'passas': ['uva'],
+          'amido': ['farinha'], 'polenta': ['semola','milho','globo']}
 ings = json.load(open(sys.argv[1]))
 faltam = [i['id'] for i in ings if i['id'] not in R]
 sobra = [k for k in R if k not in {i['id'] for i in ings}]
@@ -196,6 +199,6 @@ for i in ings:
     p, a, e = R[i['id']]
     if not p and not a: print('-- sem palavras:', i['id'], file=sys.stderr); sys.exit(1)
     ref = (i['ref'] / i['pack']) if i['ref'] else None
-    linhas.append("('%s','%s','%s',%s,%s,%s,%s,%s)" % (i['id'], i['nome'].replace("'", "''"), i['u'], i['pack'], arr(p), arr(a) if a else 'null', arr(e), ('%.8f' % ref) if ref else 'null'))
-print("insert into public.ingredientes_agente (id, nome, u, pack, palavras, alguma, excluir, ref_base) values\n" + ",\n".join(linhas) +
-      "\non conflict (id) do update set nome = excluded.nome, u = excluded.u, pack = excluded.pack, palavras = excluded.palavras, alguma = excluded.alguma, excluir = excluded.excluir, ref_base = excluded.ref_base;")
+    linhas.append("('%s','%s','%s',%s,%s,%s,%s,%s,%s)" % (i['id'], i['nome'].replace("'", "''"), i['u'], i['pack'], arr(p), arr(a) if a else 'null', arr(e), ('%.8f' % ref) if ref else 'null', arr(INICIO[i['id']]) if i['id'] in INICIO else 'null'))
+print("insert into public.ingredientes_agente (id, nome, u, pack, palavras, alguma, excluir, ref_base, inicio) values\n" + ",\n".join(linhas) +
+      "\non conflict (id) do update set nome = excluded.nome, u = excluded.u, pack = excluded.pack, palavras = excluded.palavras, alguma = excluded.alguma, excluir = excluded.excluir, ref_base = excluded.ref_base, inicio = excluded.inicio;")
