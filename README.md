@@ -88,3 +88,14 @@ Em cada publicação que mude a app, sobe o número em três sítios:
 1. `version.json` → `"versao"` (é o que a app compara; a app mostra o aviso quando este número é maior).
 2. `index.html` → `var APP_VERSION` (versão que esta página traz).
 3. `index.html` → `?v=` dos scripts `config.js` e `app.bundle.js` (para o Safari não usar a cópia antiga).
+
+## Preços online atualizados todas as semanas (Ativos.pt)
+
+- A função `supabase/functions/precos-ativos` lê a tabela pública do cabaz alimentar do Ativos.pt
+  (https://www.ativos.pt/cabaz-alimentar/produtos), com os preços online de Continente, Pingo Doce e Auchan,
+  e guarda-a na linha `ativos` da tabela `precos`. Os valores que o Ativos.pt marca como estimativa ficam de fora.
+- Corre todas as segundas-feiras às 6h00 (UTC) pelo agendador do Supabase (`pg_cron`, tarefa `precos-ativos-semanal`).
+  Faz no máximo um pedido ao Ativos.pt a cada 20 horas, e não apaga os preços anteriores se a página mudar de formato.
+- A app lê a linha `ativos` ao entrar e atualiza o preço de loja de 34 ingredientes. Os preços manuais
+  (linha `global`) continuam a ter prioridade. A secção Preços mostra a data da última leitura.
+- Os restantes ingredientes mantêm os preços de 17 de outubro de 2026 ou os que forem atualizados por fatura ou etiqueta.

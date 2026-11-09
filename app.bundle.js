@@ -865,6 +865,74 @@ var BOOK = (function(){
   return book;
 })();
 
+/* ---------- preços online do Ativos.pt (atualizados todas as semanas no Supabase) ----------
+   A função "precos-ativos" guarda na linha "ativos" da tabela precos a tabela pública do cabaz alimentar
+   do Ativos.pt (Continente, Pingo Doce e Auchan). Aqui cada produto dessa tabela substitui o preço de
+   loja do ingrediente correspondente no BOOK. Os preços manuais (precos.global) continuam a ter prioridade. */
+var ATIVOS_KEY = 'budgetchef.ativos';
+var ATIVOS_MAPA = {
+  'Arroz agulha': 'arroz', 'Esparguete': 'esparguete', 'Farinha de trigo': 'farinha', 'Açúcar branco': 'acucar',
+  'Sal fino': 'sal', 'Azeite virgem extra': 'azeite', 'Óleo alimentar 100% vegetal': 'oleo', 'Polpa de tomate': 'pelado',
+  'Feijão seco': 'feijao', 'Grão-de-bico seco': 'grao', 'Atum ao natural': 'atum', 'Bolacha Maria': 'bolachamaria',
+  'Flocos de cereais': 'cereais', 'Leite UHT meio-gordo': 'leite', 'Iogurte natural': 'iogurte', 'Queijo flamengo': 'flamengo',
+  'Manteiga': 'manteiga', 'Ovos calibre M': 'ovos', 'Fiambre da perna fatiado': 'fiambre', 'Pão de forma': 'pao',
+  'Carcaça tradicional': 'carcaca', 'Peito de frango': 'peitofrango', 'Lombo de porco': 'lombo',
+  'Carne de vaca picada': 'carnepicada', 'Pescada': 'pescada', 'Ervilhas ultracongeladas': 'ervilhas', 'Batata': 'batata',
+  'Cebola': 'cebola', 'Cenoura': 'cenoura', 'Tomate redondo': 'tomate', 'Alface': 'alface', 'Banana': 'banana',
+  'Maçã Gala': 'maca', 'Laranja': 'laranja'
+};
+var ATIVOS = null;   /* {atualizado: 'AAAA-MM-DD', ings: n} quando há preços aplicados */
+/* "2 kg" -> {q: 2000, u: 'g'}; "12 uni" -> {q: 12, u: 'un'}; "1 L" -> {q: 1000, u: 'ml'} */
+function ativosQtd(t){
+  var m = String(t || '').match(/([\d.,]+)\s*(kg|g|l|ml|cl|uni|un)/i);
+  if (!m) return null;
+  var q = Number(m[1].replace(',', '.')), u = m[2].toLowerCase();
+  if (!(q > 0)) return null;
+  if (u === 'kg') return {q: q * 1000, u: 'g'};
+  if (u === 'g') return {q: q, u: 'g'};
+  if (u === 'l') return {q: q * 1000, u: 'ml'};
+  if (u === 'cl') return {q: q * 10, u: 'ml'};
+  if (u === 'ml') return {q: q, u: 'ml'};
+  return {q: q, u: 'un'};
+}
+function aplicaAtivos(state, guardar){
+  if (!state || !Array.isArray(state.produtos)) return 0;
+  var porId = {}, lojas = ['continente', 'pingodoce', 'auchan'], feitos = {};
+  ING.forEach(function(i){ porId[i.id] = i; });
+  state.produtos.forEach(function(p){
+    var id = ATIVOS_MAPA[p.nome], ing = id && porId[id], ref = ativosQtd(p.qtd);
+    if (!ing || !ref || ref.u !== ing.u || !p.lojas) return;
+    lojas.forEach(function(sid){
+      var l = p.lojas[sid];
+      if (!l || !(l.preco > 0)) return;
+      var v = round2(l.preco / ref.q * ing.pack);
+      if (!(v > 0) || v > 500) return;
+      BOOK[sid][id] = v; feitos[id] = true;
+    });
+    var vals = lojas.map(function(sid){ return BOOK[sid][id]; }).filter(function(v){ return v != null; });
+    if (vals.length) BOOK.ref[id] = round2(median(vals));
+  });
+  var n = Object.keys(feitos).length;
+  if (n){
+    ATIVOS = {atualizado: String(state.atualizado || '').slice(0, 10), ings: n};
+    if (guardar){ try { localStorage.setItem(ATIVOS_KEY, JSON.stringify(state)); } catch (e) {} }
+  }
+  return n;
+}
+/* ao abrir, usa a última leitura guardada neste dispositivo (funciona sem ligação) */
+(function(){ try { var raw = localStorage.getItem(ATIVOS_KEY); if (raw) aplicaAtivos(JSON.parse(raw), false); } catch (e) {} })();
+var MESES_PT = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+function dataPt(iso){
+  var m = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return m ? Number(m[3]) + ' de ' + MESES_PT[Number(m[2]) - 1] + ' de ' + m[1] : '';
+}
+/* frase sobre a origem dos preços, para a secção Preços */
+function notaOrigemPrecos(){
+  if (!ATIVOS) return 'recolhidos a 17 de outubro de 2026';
+  return 'atualizados todas as semanas a partir dos preços online do Ativos.pt em ' + ATIVOS.ings +
+         ' ingredientes (última leitura: ' + dataPt(ATIVOS.atualizado) + '); os restantes são da recolha de 17 de outubro de 2026';
+}
+
 var IMAP = {};
 function rebuildIngIndex(st){
   Object.keys(IMAP).forEach(function(k){ delete IMAP[k]; });
@@ -1622,11 +1690,14 @@ function pullRemote(){
     REMOTE.casaId = r.data;
     return Promise.all([
       SB.from('casa').select('state,saved_at').eq('id', REMOTE.casaId).maybeSingle(),
-      SB.from('precos').select('state').eq('id', 'global').maybeSingle()
+      SB.from('precos').select('state').eq('id', 'global').maybeSingle(),
+      SB.from('precos').select('state').eq('id', 'ativos').maybeSingle()
     ]);
   }).then(function(res){
     if (res[0].error) throw res[0].error;
     if (res[1].error) throw res[1].error;
+    /* preços online da semana (se falhar, a app continua com os preços que já tem) */
+    if (res[2] && !res[2].error && res[2].data && res[2].data.state) aplicaAtivos(res[2].data.state, true);
     REMOTE.precos = (res[1].data && res[1].data.state) || {};
     S.prices = clone(REMOTE.precos);
     reconcile(res[0].data);
@@ -2214,8 +2285,8 @@ function priceRows(){
 }
 function viewPrecos(){
   var st = storeObj(), note;
-  if (S.store === 'ref') note = 'Média de referência: mediana de Continente, Pingo Doce e Auchan, recolhida a 17 de outubro de 2026. Os ingredientes marcados como estimativa ainda não têm preço recolhido.';
-  else if (storeHasData(S.store, S) && Object.keys(BOOK[S.store] || {}).length) note = 'Preços de ' + st.curto + ' recolhidos a 17 de outubro de 2026 nos ingredientes com dados. Os restantes usam a média.';
+  if (S.store === 'ref') note = 'Média de referência: mediana de Continente, Pingo Doce e Auchan, com preços ' + notaOrigemPrecos() + '. Os ingredientes marcados como estimativa ainda não têm preço recolhido.';
+  else if (storeHasData(S.store, S) && Object.keys(BOOK[S.store] || {}).length) note = 'Preços de ' + st.curto + ' ' + notaOrigemPrecos() + '. Os ingredientes sem dados desta loja usam a média.';
   else note = 'Ainda não tenho preços recolhidos de ' + st.curto + ', por isso mostro a média de Continente, Pingo Doce e Auchan. Escreve os preços que vês na loja e passam a valer só para ' + st.curto + '.';
   var h = '<div class="vh"><h1 class="h2">Preços</h1><div class="row"><button type="button" class="btn pri sm" data-act="scan-open">Ler etiqueta</button><button type="button" class="btn sm" data-act="fat-open">Ler fatura</button><button type="button" class="btn sm" data-act="new-ing">Novo ingrediente</button></div></div>';
   h += '<div class="stack"><p class="note">Preço por embalagem em <strong>' + esc(st.curto) + '</strong>. ' + note +
