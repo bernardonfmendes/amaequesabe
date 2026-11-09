@@ -822,6 +822,10 @@ var LS_KEY = 'budgetchef.v1';
 
 function clone(o){ return JSON.parse(JSON.stringify(o)); }
 function round2(x){ return Math.round(x * 100) / 100; }
+function media(a){
+  var v = a.filter(function(x){ return x != null && isFinite(x); });
+  return v.length ? v.reduce(function(t, x){ return t + x; }, 0) / v.length : 0;
+}
 function median(a){
   var s = a.slice().sort(function(x, y){ return x - y; });
   var m = Math.floor(s.length / 2);
@@ -860,7 +864,7 @@ var BOOK = (function(){
       book[sid][i.id] = round2(p);
       vals.push(p);
     });
-    book.ref[i.id] = round2(median(vals));
+    book.ref[i.id] = round2(media(vals));
   });
   return book;
 })();
@@ -910,7 +914,7 @@ function aplicaAtivos(state, guardar){
       BOOK[sid][id] = v; feitos[id] = true;
     });
     var vals = lojas.map(function(sid){ return BOOK[sid][id]; }).filter(function(v){ return v != null; });
-    if (vals.length) BOOK.ref[id] = round2(median(vals));
+    if (vals.length) BOOK.ref[id] = round2(media(vals));
   });
   var n = Object.keys(feitos).length;
   if (n){
@@ -2070,7 +2074,8 @@ function viewReceitas(){
 }
 
 /* ---------- vista: Lista de compras ---------- */
-function liRow(it){
+function liRow(it, opt){
+  opt = (opt && typeof opt === 'object') ? opt : null;   /* map() passa o índice: só aceita objeto */
   var u = it.ing.u, id = esc(it.ing.id);
   var buy = it.loose ? pesoTxt(it.ing, it.qty) : it.units + ' × ' + fmtQty(it.ing.pack, u);
   var pk = precoKgTxt(it.ing, it.price.v);
@@ -2080,8 +2085,9 @@ function liRow(it){
   else h += '<input type="checkbox" id="bc-' + id + '" data-act="bought" data-id="' + id + '"' + (it.bought ? ' checked' : '') + ' aria-label="Comprado: ' + esc(it.ing.nome) + '">';
   h += '<span><label class="li-name"' + (it.have ? '' : ' for="bc-' + id + '"') + '>' + esc(it.ing.nome) + '</label>' +
        '<span class="li-sub">' + sub + '</span>' +
+       (opt && opt.dica && !it.have ? '<span class="li-sub li-barato">' + opt.dica + '</span>' : '') +
        '<button type="button" class="linkbtn" data-act="have" data-id="' + id + '">' + (it.have ? 'Preciso de comprar' : 'Já tenho em casa') + '</button></span>' +
-       '<span class="li-price">' + (it.have ? '—' : eur(it.cost)) + '</span></div>';
+       '<span class="li-price">' + (it.have ? '—' : eur(opt && opt.custo != null ? opt.custo : it.cost)) + '</span></div>';
   return h;
 }
 function listText(sl){
@@ -2104,6 +2110,31 @@ function listText(sl){
   return lines.join('\n');
 }
 /* ---------- plano por loja: cada artigo onde está mais barato ---------- */
+function nomeLoja(id){ return id === 'sem' ? 'Sem preço em nenhuma loja' : ((STORES.filter(function(s){ return s.id === id; })[0] || {}).curto || id); }
+/* para cada artigo a comprar: a loja mais barata e o custo lá ({ingId: {id, cost}}) */
+function melhoresLojas(toBuy){
+  var lojas = STORES.filter(function(s){ return s.id !== 'ref' && storeHasData(s.id, S); });
+  var cache = {}, out = {};
+  lojas.forEach(function(s){
+    var m = {};
+    shoppingList(S, s.id).items.forEach(function(x){ m[x.ing.id] = x.cost; });
+    cache[s.id] = m;
+  });
+  toBuy.forEach(function(it){
+    var opts = lojas.filter(function(s){ return hasStorePrice(it.ing, s.id, S) && cache[s.id][it.ing.id] != null; })
+      .map(function(s){ return {id: s.id, cost: cache[s.id][it.ing.id]}; })
+      .sort(function(a, b){ return a.cost - b.cost; });
+    out[it.ing.id] = opts[0] || {id: 'sem', cost: it.cost};
+  });
+  return out;
+}
+/* frase "Mais barato no X: Y €" quando a loja escolhida não é a mais barata */
+function dicaBarato(it, best){
+  if (!best || best.id === 'sem' || best.id === S.store) return '';
+  if (S.store !== 'ref' && !(best.cost < it.cost - 0.005)) return '';
+  return 'Mais barato no ' + esc(nomeLoja(best.id)) + ': <strong>' + eur(best.cost) + '</strong>' +
+         (S.store !== 'ref' && it.cost > best.cost ? ' (poupas ' + eur(it.cost - best.cost) + ')' : '');
+}
 function listaPorLoja(toBuy){
   var lojas = STORES.filter(function(s){ return s.id !== 'ref' && storeHasData(s.id, S); });
   var cache = {};
@@ -2124,7 +2155,7 @@ function listaPorLoja(toBuy){
     var sub = lst.reduce(function(a, x){ return a + x.cost; }, 0);
     var nome = id === 'sem' ? 'Sem preço em nenhuma loja' : ((STORES.filter(function(s){ return s.id === id; })[0] || {}).curto || id);
     h += '<div><div class="sect">' + esc(nome) + ' · ' + eur(sub) + '</div><div class="card" style="padding-top:4px;padding-bottom:4px">' +
-      lst.map(function(x){ return liRow(x.it); }).join('') + '</div></div>';
+      lst.map(function(x){ return liRow(x.it, {custo: x.cost}); }).join('') + '</div></div>';
   });
   return h;
 }
@@ -2202,6 +2233,15 @@ function viewLista(){
        '<button type="button" class="btn" data-act="reset-bought">Desmarcar tudo</button><button type="button" class="btn" data-act="gastos-open">Histórico de semanas</button></div>';
   var lojasOk = STORES.filter(function(s){ return s.id !== 'ref' && storeHasData(s.id, S); }).length >= 2;
   var vista = (S.vistaLista === 'loja' && lojasOk) ? 'loja' : 'tipo';
+  if (lojasOk && toBuy.length){
+    var mb = melhoresLojas(toBuy), totMix = 0, nLojas = {};
+    toBuy.forEach(function(it){ var b = mb[it.ing.id]; totMix += b.cost; nLojas[b.id] = 1; });
+    var nL = Object.keys(nLojas).filter(function(k){ return k !== 'sem'; }).length;
+    var compras = toBuy.reduce(function(a, it){ return a + it.cost; }, 0);
+    h += '<div class="card barato" role="note"><strong>Mais barato: ' + eur(totMix + sl.extras) + '</strong> comprando cada artigo onde custa menos (' + nL + (nL === 1 ? ' loja' : ' lojas') + ')' +
+         (S.store !== 'ref' && compras - totMix > 0.005 ? ', poupas <strong>' + eur(compras - totMix) + '</strong> face a comprar tudo no ' + esc(storeObj().curto) : '') +
+         '. Vê <em>Por supermercado</em> para a lista de cada loja.</div>';
+  }
   if (lojasOk){
     h += '<div class="row wrap" role="group" aria-label="Ordenar a lista" style="margin-bottom:12px">' +
       '<button type="button" class="btn' + (vista === 'tipo' ? ' pri' : '') + '" aria-pressed="' + (vista === 'tipo') + '" data-act="lista-vista" data-v="tipo">Por tipo de produto</button>' +
@@ -2213,11 +2253,13 @@ function viewLista(){
   }
   h += '<p class="note">Compra-se a embalagem inteira, por isso paga-se um pouco mais do que se consome. O que sobra fica em casa para as próximas semanas.</p>';
 
+  var melhores = lojasOk ? melhoresLojas(toBuy) : {};
   if (vista === 'loja') { h += listaPorLoja(toBuy); } else CATS.forEach(function(c){
     var its = toBuy.filter(function(i){ return i.ing.cat === c.id; })
       .sort(function(a, b){ return a.ing.nome.localeCompare(b.ing.nome, 'pt'); });
     if (!its.length) return;
-    h += '<div><div class="sect">' + c.nome + '</div><div class="card" style="padding-top:4px;padding-bottom:4px">' + its.map(liRow).join('') + '</div></div>';
+    h += '<div><div class="sect">' + c.nome + '</div><div class="card" style="padding-top:4px;padding-bottom:4px">' +
+      its.map(function(it){ return liRow(it, {dica: dicaBarato(it, melhores[it.ing.id])}); }).join('') + '</div></div>';
   });
 
   /* itens avulsos */
@@ -2263,7 +2305,7 @@ function viewLista(){
 }
 
 /* ---------- vista: Preços ---------- */
-var SRC_LABEL = {manual: 'manual', loja: 'loja', media: 'média', mediana: 'mediana', est: 'estimativa'};
+var SRC_LABEL = {manual: 'manual', loja: 'loja', media: 'média', mediana: 'média', est: 'estimativa'};
 function priceRows(){
   var q = norm(UI.pq), out = '', any = false;
   CATS.forEach(function(c){
@@ -2285,7 +2327,7 @@ function priceRows(){
 }
 function viewPrecos(){
   var st = storeObj(), note;
-  if (S.store === 'ref') note = 'Média de referência: mediana de Continente, Pingo Doce e Auchan, com preços ' + notaOrigemPrecos() + '. Os ingredientes marcados como estimativa ainda não têm preço recolhido.';
+  if (S.store === 'ref') note = 'Média de referência: média dos preços de Continente, Pingo Doce e Auchan, ' + notaOrigemPrecos() + '. Os ingredientes marcados como estimativa ainda não têm preço recolhido.';
   else if (storeHasData(S.store, S) && Object.keys(BOOK[S.store] || {}).length) note = 'Preços de ' + st.curto + ' ' + notaOrigemPrecos() + '. Os ingredientes sem dados desta loja usam a média.';
   else note = 'Ainda não tenho preços recolhidos de ' + st.curto + ', por isso mostro a média de Continente, Pingo Doce e Auchan. Escreve os preços que vês na loja e passam a valer só para ' + st.curto + '.';
   var h = '<div class="vh"><h1 class="h2">Preços</h1><div class="row"><button type="button" class="btn pri sm" data-act="scan-open">Ler etiqueta</button><button type="button" class="btn sm" data-act="fat-open">Ler fatura</button><button type="button" class="btn sm" data-act="new-ing">Novo ingrediente</button></div></div>';
