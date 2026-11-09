@@ -81,7 +81,7 @@ var ING = [
   {id:'limao',      nome:'Limão',                   cat:'hort', u:'un', pack:1,    est:0.30, srcQty:1, gun:200, src:{continente:0.55, pingodoce:0.51, auchan:0.51}},
   {id:'salsa',      nome:'Salsa (molho)',           cat:'hort', u:'un', pack:1,    est:0.69, srcQty:1, src:{continente:1.01, pingodoce:1.01}, gun:50},
   {id:'alface',     nome:'Alface',                  cat:'hort', u:'un', pack:1,    srcQty:2,
-   src:{continente:2.63, pingodoce:2.43, auchan:1.22}, gun:300},
+   src:{continente:2.63, pingodoce:2.43, auchan:2.5}, gun:300},
   {id:'espinafres', nome:'Espinafres',              cat:'hort', u:'g',  pack:250,  est:1.39, srcQty:250, src:{continente:1.94, pingodoce:1.94, auchan:1.69}},
   {id:'brocolos',   nome:'Brócolos',                cat:'hort', u:'g',  pack:500,  est:1.49, srcQty:500, src:{continente:1.12, pingodoce:1.53, auchan:1.53}},
   {id:'couve',      nome:'Couve',                   cat:'hort', u:'g',  pack:1000,step:250, est:1.69, srcQty:1000, src:{continente:2.03, pingodoce:1.72, auchan:2.23}},
@@ -102,7 +102,7 @@ var ING = [
    src:{continente:0.46, pingodoce:0.45, auchan:0.46}},
   {id:'pimentao',   nome:'Pimentão doce',           cat:'temp', u:'g',  pack:40,   est:1.19, pantry:true, srcQty:40, src:{continente:0.48, pingodoce:1.25}},
   {id:'louro',      nome:'Louro',                   cat:'temp', u:'g',  pack:10,   est:0.89, pantry:true, srcQty:10, src:{continente:0.7, pingodoce:0.79, auchan:0.79}},
-  {id:'caldo',      nome:'Cubo de caldo',           cat:'temp', u:'un', pack:12,   est:1.09, pantry:true, gun:10, srcQty:12, src:{pingodoce:0.86, auchan:2.69}}
+  {id:'caldo',      nome:'Cubo de caldo',           cat:'temp', u:'un', pack:12,   est:1.09, pantry:true, gun:10, srcQty:12, src:{pingodoce:0.86, auchan:0.99}}
 ];
 
 /* ing: [id do ingrediente, quantidade em unidade base, para "doses" doses] */
@@ -258,7 +258,7 @@ ING = ING.concat([
   {id:'camarao',  nome:'Camarão',               cat:'talho',u:'g',  pack:500,  step:100, est:8.99, srcQty:500, src:{continente:4.08, pingodoce:4.08}},
   {id:'lulas',    nome:'Lulas',                 cat:'talho',u:'g',  pack:1000, step:250, est:11.90, srcQty:1000, src:{continente:17.33, pingodoce:11.21, auchan:14.27}},
   {id:'mexilhao', nome:'Mexilhão',              cat:'talho',u:'g',  pack:1000, step:500, est:3.90, srcQty:1000, src:{continente:3.05, pingodoce:2.74, auchan:2.54}},
-  {id:'ameijoas', nome:'Amêijoas',              cat:'talho',u:'g',  pack:500,  step:250, est:6.99, srcQty:500, src:{continente:17.33, pingodoce:6.63, auchan:7.13}},
+  {id:'ameijoas', nome:'Amêijoas',              cat:'talho',u:'g',  pack:500,  step:250, est:6.99, srcQty:500, src:{continente:6.5, pingodoce:6.63, auchan:7.13}},
   {id:'carapau',  nome:'Carapau',               cat:'talho',u:'g',  pack:1000, step:250, est:4.90, srcQty:1000, src:{continente:5.09, pingodoce:4.07, auchan:2.03}},
   {id:'sardinha', nome:'Sardinha fresca',       cat:'talho',u:'g',  pack:1000, step:250, est:6.50, srcQty:1000, src:{continente:6.11, pingodoce:5.09}},
   {id:'cogumelos',nome:'Cogumelos',             cat:'hort', u:'g',  pack:250,  est:1.59, srcQty:250, src:{continente:1.26, pingodoce:2.03, auchan:1.18}},
@@ -270,7 +270,7 @@ ING = ING.concat([
   {id:'abacate',  nome:'Abacate',               cat:'hort', u:'un', pack:1,    est:1.29, srcQty:1, src:{pingodoce:1.17, auchan:1.22}, gun:250},
   {id:'coentros', nome:'Coentros (molho)',      cat:'hort', u:'un', pack:1,    est:0.69, srcQty:1, src:{continente:1.01, pingodoce:1.01, auchan:1.01}, gun:50},
   {id:'milho',    nome:'Milho doce (lata)',     cat:'merc', u:'g',  pack:300,  est:0.89, srcQty:300, src:{continente:1.23, pingodoce:1.45, auchan:1.45}},
-  {id:'azeitonas',nome:'Azeitonas',             cat:'merc', u:'g',  pack:200,  est:1.19, srcQty:200, src:{continente:1.46, pingodoce:1.59, auchan:2.91}},
+  {id:'azeitonas',nome:'Azeitonas',             cat:'merc', u:'g',  pack:200,  est:1.19, srcQty:200, src:{continente:1.46, pingodoce:1.59, auchan:1.04}},
   {id:'batatapalha',nome:'Batata palha',        cat:'merc', u:'g',  pack:190,  est:1.69, srcQty:190, src:{pingodoce:1.71, auchan:1.06}},
   {id:'massa',    nome:'Massa (fusilli, penne)',cat:'merc', u:'g',  pack:500,  est:0.55, srcQty:500, src:{continente:1.11, pingodoce:1.11, auchan:1.11}},
   {id:'lasanha',  nome:'Massa de lasanha',      cat:'merc', u:'g',  pack:500,  est:1.29, srcQty:500, src:{continente:1.62, pingodoce:1.42, auchan:1.42}},
@@ -289,7 +289,7 @@ ING = ING.concat([
   {id:'alhofrances', nome:'Alho-francês', cat:'hort', u:'g', pack:500, srcQty:500, src:{continente:1.38, pingodoce:2.79}},
   {id:'nabo', nome:'Nabo', cat:'hort', u:'g', pack:1000, srcQty:1000, src:{continente:2.44, pingodoce:2.23, auchan:3.05}},
   {id:'pimentovermelho', nome:'Pimento vermelho', cat:'hort', u:'g', pack:1000, srcQty:1000, src:{continente:3.05, pingodoce:2.95, auchan:3.36}},
-  {id:'tomatecereja', nome:'Tomate cereja', cat:'hort', u:'g', pack:250, srcQty:250, src:{continente:1.42, pingodoce:1.62, auchan:2.74}},
+  {id:'tomatecereja', nome:'Tomate cereja', cat:'hort', u:'g', pack:250, srcQty:250, src:{continente:1.42, pingodoce:1.62, auchan:1.39}},
   {id:'pera', nome:'Pera Rocha', cat:'hort', u:'g', pack:1000, srcQty:1000, src:{continente:1.93, pingodoce:1.62, auchan:2.03}},
   {id:'kiwi', nome:'Kiwi', cat:'hort', u:'g', pack:500, srcQty:500, src:{continente:1.53, pingodoce:2.24, auchan:2.55}},
   {id:'uvas', nome:'Uvas', cat:'hort', u:'g', pack:500, srcQty:500, src:{continente:2.54, pingodoce:3.05, auchan:2.85}},
@@ -313,7 +313,7 @@ ING = ING.concat([
   {id:'vitela', nome:'Vitela para guisar', cat:'talho', u:'g', pack:1000, srcQty:1000, src:{pingodoce:13.25}},
   {id:'linguica', nome:'Linguiça', cat:'charc', u:'g', pack:200, srcQty:200, src:{continente:1.75, pingodoce:2.33}},
   {id:'morcela', nome:'Morcela', cat:'charc', u:'g', pack:200, srcQty:200, src:{continente:1.79, pingodoce:2.09, auchan:1.62}},
-  {id:'robalo', nome:'Robalo', cat:'talho', u:'g', pack:1000, srcQty:1000, src:{continente:8.15, pingodoce:10.19, auchan:25.49}},
+  {id:'robalo', nome:'Robalo', cat:'talho', u:'g', pack:1000, srcQty:1000, src:{continente:8.15, pingodoce:10.19, auchan:9.99}},
   {id:'corvina', nome:'Corvina', cat:'talho', u:'g', pack:1000, srcQty:1000, src:{continente:10.19, pingodoce:9.17, auchan:9.17}},
   {id:'tamboril', nome:'Tamboril', cat:'talho', u:'g', pack:1000, srcQty:1000, src:{continente:12.23, pingodoce:14.27, auchan:8.15}},
   {id:'cavala', nome:'Cavala', cat:'talho', u:'g', pack:1000, srcQty:1000, src:{continente:4.07, pingodoce:4.58, auchan:4.07}},
@@ -330,15 +330,15 @@ ING = ING.concat([
   {id:'mel', nome:'Mel', cat:'merc', u:'g', pack:500, srcQty:500, src:{continente:3.15, pingodoce:3.05, auchan:3.15}},
   {id:'chocolate', nome:'Chocolate negro para culinária', cat:'merc', u:'g', pack:100, srcQty:100, src:{continente:1.53, pingodoce:1.53, auchan:1.43}},
   {id:'cacau', nome:'Cacau em pó', cat:'merc', u:'g', pack:250, srcQty:250, src:{continente:4.06, pingodoce:4.06, auchan:5.4}},
-  {id:'fermento', nome:'Fermento em pó', cat:'temp', u:'g', pack:100, srcQty:100, src:{continente:2.11, pingodoce:0.81, auchan:0.81}},
+  {id:'fermento', nome:'Fermento em pó', cat:'temp', u:'g', pack:100, srcQty:100, src:{continente:0.79, pingodoce:0.81, auchan:0.81}},
   {id:'bicarbonato', nome:'Bicarbonato de sódio', cat:'temp', u:'g', pack:100, srcQty:100, src:{continente:0.33, pingodoce:0.51, auchan:0.51}},
   {id:'amido', nome:'Amido de milho', cat:'merc', u:'g', pack:400, srcQty:400, src:{continente:1.21, pingodoce:2.03}},
   {id:'cuscuz', nome:'Cuscuz', cat:'merc', u:'g', pack:500, srcQty:500, src:{continente:1.74, pingodoce:0.92, auchan:1.21}},
   {id:'quinoa', nome:'Quinoa', cat:'merc', u:'g', pack:500, srcQty:500, src:{continente:2.74, pingodoce:2.44, auchan:3.67}},
-  {id:'tomatesecos', nome:'Tomate seco', cat:'merc', u:'g', pack:200, srcQty:200, src:{continente:8.14, pingodoce:2.69, auchan:2.69}},
+  {id:'tomatesecos', nome:'Tomate seco', cat:'merc', u:'g', pack:200, srcQty:200, src:{continente:2.64, pingodoce:2.69, auchan:2.69}},
   {id:'ketchup', nome:'Ketchup', cat:'merc', u:'g', pack:500, srcQty:500, src:{continente:1.05, auchan:0.9}},
-  {id:'maionese', nome:'Maionese', cat:'merc', u:'g', pack:250, srcQty:250, src:{continente:4.16, pingodoce:1.66, auchan:2.97}},
-  {id:'mostarda', nome:'Mostarda', cat:'merc', u:'g', pack:200, srcQty:200, src:{continente:0.78, pingodoce:1.31, auchan:4.66}},
+  {id:'maionese', nome:'Maionese', cat:'merc', u:'g', pack:250, srcQty:250, src:{continente:1.13, pingodoce:1.66, auchan:0.94}},
+  {id:'mostarda', nome:'Mostarda', cat:'merc', u:'g', pack:200, srcQty:200, src:{continente:0.78, pingodoce:1.31, auchan:0.63}},
   {id:'feijaobranco', nome:'Feijão branco', cat:'merc', u:'g', pack:500, srcQty:500, src:{continente:0.97, pingodoce:0.97, auchan:1.02}},
   {id:'feijaofrade', nome:'Feijão-frade', cat:'merc', u:'g', pack:500, srcQty:500, src:{continente:1, pingodoce:1, auchan:1.17}},
   {id:'broa', nome:'Broa de milho', cat:'pao', u:'g', pack:500, srcQty:500, src:{continente:1.52, pingodoce:1.61, auchan:1.79}},
@@ -348,16 +348,16 @@ ING = ING.concat([
   {id:'cocoralado', nome:'Coco ralado', cat:'merc', u:'g', pack:200, srcQty:200, src:{continente:2.03, pingodoce:1.62, auchan:1.62}},
   {id:'colorau', nome:'Colorau', cat:'temp', u:'g', pack:40, srcQty:40, src:{continente:1.25, pingodoce:1.67, auchan:0.48}},
   {id:'piripiri', nome:'Piri-piri em pó', cat:'temp', u:'g', pack:40, srcQty:40, src:{continente:0.68, pingodoce:0.59, auchan:1.68}},
-  {id:'pimentapreta', nome:'Pimenta preta moída', cat:'temp', u:'g', pack:40, srcQty:40, src:{continente:0.75, pingodoce:0.75, auchan:2.74}},
-  {id:'oregaos', nome:'Orégãos', cat:'temp', u:'g', pack:20, srcQty:20, src:{continente:1.09, pingodoce:1.01, auchan:2.25}},
-  {id:'tomilho', nome:'Tomilho', cat:'temp', u:'g', pack:20, srcQty:20, src:{continente:0.91, pingodoce:0.91, auchan:2.4}},
+  {id:'pimentapreta', nome:'Pimenta preta moída', cat:'temp', u:'g', pack:40, srcQty:40, src:{continente:0.75, pingodoce:0.75, auchan:0.71}},
+  {id:'oregaos', nome:'Orégãos', cat:'temp', u:'g', pack:20, srcQty:20, src:{continente:1.09, pingodoce:1.01, auchan:1.23}},
+  {id:'tomilho', nome:'Tomilho', cat:'temp', u:'g', pack:20, srcQty:20, src:{continente:0.91, pingodoce:0.91, auchan:1.27}},
   {id:'alecrim', nome:'Alecrim', cat:'temp', u:'g', pack:20, srcQty:20, src:{continente:1.83, auchan:1.46}},
   {id:'cominhos', nome:'Cominhos', cat:'temp', u:'g', pack:40, srcQty:40, src:{continente:0.81, pingodoce:0.81, auchan:1.13}},
   {id:'canela', nome:'Canela em pó', cat:'temp', u:'g', pack:40, srcQty:40, src:{continente:0.6, pingodoce:0.6, auchan:0.45}},
-  {id:'molhosoja', nome:'Molho de soja', cat:'temp', u:'ml', pack:150, srcQty:150, src:{continente:0.75, pingodoce:0.75, auchan:3.56}},
+  {id:'molhosoja', nome:'Molho de soja', cat:'temp', u:'ml', pack:150, srcQty:150, src:{continente:0.75, pingodoce:0.75, auchan:1.49}},
   {id:'vinagrebalsamico', nome:'Vinagre balsâmico', cat:'temp', u:'ml', pack:250, srcQty:250, src:{continente:1.27, pingodoce:1.27, auchan:2.03}},
   {id:'acucarmascavado', nome:'Açúcar amarelo mascavado', cat:'temp', u:'g', pack:500, srcQty:500, src:{continente:1.22, pingodoce:1.17, auchan:1.32}},
-  {id:'farinhamilho', nome:'Farinha de milho', cat:'merc', u:'g', pack:1000, srcQty:1000, src:{continente:1.41, pingodoce:1.2, auchan:3.24}},
+  {id:'farinhamilho', nome:'Farinha de milho', cat:'merc', u:'g', pack:1000, srcQty:1000, src:{continente:1.41, pingodoce:1.2, auchan:1.29}},
 ]);
 
 RECIPES = RECIPES.concat([
@@ -822,6 +822,10 @@ var LS_KEY = 'budgetchef.v1';
 
 function clone(o){ return JSON.parse(JSON.stringify(o)); }
 function round2(x){ return Math.round(x * 100) / 100; }
+function media(a){
+  var v = a.filter(function(x){ return x != null && isFinite(x); });
+  return v.length ? v.reduce(function(t, x){ return t + x; }, 0) / v.length : 0;
+}
 function median(a){
   var s = a.slice().sort(function(x, y){ return x - y; });
   var m = Math.floor(s.length / 2);
@@ -860,7 +864,7 @@ var BOOK = (function(){
       book[sid][i.id] = round2(p);
       vals.push(p);
     });
-    book.ref[i.id] = round2(median(vals));
+    book.ref[i.id] = round2(media(vals));
   });
   return book;
 })();
@@ -910,7 +914,7 @@ function aplicaAtivos(state, guardar){
       BOOK[sid][id] = v; feitos[id] = true;
     });
     var vals = lojas.map(function(sid){ return BOOK[sid][id]; }).filter(function(v){ return v != null; });
-    if (vals.length) BOOK.ref[id] = round2(median(vals));
+    if (vals.length) BOOK.ref[id] = round2(media(vals));
   });
   var n = Object.keys(feitos).length;
   if (n){
@@ -2070,7 +2074,8 @@ function viewReceitas(){
 }
 
 /* ---------- vista: Lista de compras ---------- */
-function liRow(it){
+function liRow(it, opt){
+  opt = (opt && typeof opt === 'object') ? opt : null;   /* map() passa o índice: só aceita objeto */
   var u = it.ing.u, id = esc(it.ing.id);
   var buy = it.loose ? pesoTxt(it.ing, it.qty) : it.units + ' × ' + fmtQty(it.ing.pack, u);
   var pk = precoKgTxt(it.ing, it.price.v);
@@ -2080,8 +2085,9 @@ function liRow(it){
   else h += '<input type="checkbox" id="bc-' + id + '" data-act="bought" data-id="' + id + '"' + (it.bought ? ' checked' : '') + ' aria-label="Comprado: ' + esc(it.ing.nome) + '">';
   h += '<span><label class="li-name"' + (it.have ? '' : ' for="bc-' + id + '"') + '>' + esc(it.ing.nome) + '</label>' +
        '<span class="li-sub">' + sub + '</span>' +
+       (opt && opt.dica && !it.have ? '<span class="li-sub li-barato">' + opt.dica + '</span>' : '') +
        '<button type="button" class="linkbtn" data-act="have" data-id="' + id + '">' + (it.have ? 'Preciso de comprar' : 'Já tenho em casa') + '</button></span>' +
-       '<span class="li-price">' + (it.have ? '—' : eur(it.cost)) + '</span></div>';
+       '<span class="li-price">' + (it.have ? '—' : eur(opt && opt.custo != null ? opt.custo : it.cost)) + '</span></div>';
   return h;
 }
 function listText(sl){
@@ -2104,6 +2110,31 @@ function listText(sl){
   return lines.join('\n');
 }
 /* ---------- plano por loja: cada artigo onde está mais barato ---------- */
+function nomeLoja(id){ return id === 'sem' ? 'Sem preço em nenhuma loja' : ((STORES.filter(function(s){ return s.id === id; })[0] || {}).curto || id); }
+/* para cada artigo a comprar: a loja mais barata e o custo lá ({ingId: {id, cost}}) */
+function melhoresLojas(toBuy){
+  var lojas = STORES.filter(function(s){ return s.id !== 'ref' && storeHasData(s.id, S); });
+  var cache = {}, out = {};
+  lojas.forEach(function(s){
+    var m = {};
+    shoppingList(S, s.id).items.forEach(function(x){ m[x.ing.id] = x.cost; });
+    cache[s.id] = m;
+  });
+  toBuy.forEach(function(it){
+    var opts = lojas.filter(function(s){ return hasStorePrice(it.ing, s.id, S) && cache[s.id][it.ing.id] != null; })
+      .map(function(s){ return {id: s.id, cost: cache[s.id][it.ing.id]}; })
+      .sort(function(a, b){ return a.cost - b.cost; });
+    out[it.ing.id] = opts[0] || {id: 'sem', cost: it.cost};
+  });
+  return out;
+}
+/* frase "Mais barato no X: Y €" quando a loja escolhida não é a mais barata */
+function dicaBarato(it, best){
+  if (!best || best.id === 'sem' || best.id === S.store) return '';
+  if (S.store !== 'ref' && !(best.cost < it.cost - 0.005)) return '';
+  return 'Mais barato no ' + esc(nomeLoja(best.id)) + ': <strong>' + eur(best.cost) + '</strong>' +
+         (S.store !== 'ref' && it.cost > best.cost ? ' (poupas ' + eur(it.cost - best.cost) + ')' : '');
+}
 function listaPorLoja(toBuy){
   var lojas = STORES.filter(function(s){ return s.id !== 'ref' && storeHasData(s.id, S); });
   var cache = {};
@@ -2124,7 +2155,7 @@ function listaPorLoja(toBuy){
     var sub = lst.reduce(function(a, x){ return a + x.cost; }, 0);
     var nome = id === 'sem' ? 'Sem preço em nenhuma loja' : ((STORES.filter(function(s){ return s.id === id; })[0] || {}).curto || id);
     h += '<div><div class="sect">' + esc(nome) + ' · ' + eur(sub) + '</div><div class="card" style="padding-top:4px;padding-bottom:4px">' +
-      lst.map(function(x){ return liRow(x.it); }).join('') + '</div></div>';
+      lst.map(function(x){ return liRow(x.it, {custo: x.cost}); }).join('') + '</div></div>';
   });
   return h;
 }
@@ -2202,6 +2233,15 @@ function viewLista(){
        '<button type="button" class="btn" data-act="reset-bought">Desmarcar tudo</button><button type="button" class="btn" data-act="gastos-open">Histórico de semanas</button></div>';
   var lojasOk = STORES.filter(function(s){ return s.id !== 'ref' && storeHasData(s.id, S); }).length >= 2;
   var vista = (S.vistaLista === 'loja' && lojasOk) ? 'loja' : 'tipo';
+  if (lojasOk && toBuy.length){
+    var mb = melhoresLojas(toBuy), totMix = 0, nLojas = {};
+    toBuy.forEach(function(it){ var b = mb[it.ing.id]; totMix += b.cost; nLojas[b.id] = 1; });
+    var nL = Object.keys(nLojas).filter(function(k){ return k !== 'sem'; }).length;
+    var compras = toBuy.reduce(function(a, it){ return a + it.cost; }, 0);
+    h += '<div class="card barato" role="note"><strong>Mais barato: ' + eur(totMix + sl.extras) + '</strong> comprando cada artigo onde custa menos (' + nL + (nL === 1 ? ' loja' : ' lojas') + ')' +
+         (S.store !== 'ref' && compras - totMix > 0.005 ? ', poupas <strong>' + eur(compras - totMix) + '</strong> face a comprar tudo no ' + esc(storeObj().curto) : '') +
+         '. Vê <em>Por supermercado</em> para a lista de cada loja.</div>';
+  }
   if (lojasOk){
     h += '<div class="row wrap" role="group" aria-label="Ordenar a lista" style="margin-bottom:12px">' +
       '<button type="button" class="btn' + (vista === 'tipo' ? ' pri' : '') + '" aria-pressed="' + (vista === 'tipo') + '" data-act="lista-vista" data-v="tipo">Por tipo de produto</button>' +
@@ -2213,11 +2253,13 @@ function viewLista(){
   }
   h += '<p class="note">Compra-se a embalagem inteira, por isso paga-se um pouco mais do que se consome. O que sobra fica em casa para as próximas semanas.</p>';
 
+  var melhores = lojasOk ? melhoresLojas(toBuy) : {};
   if (vista === 'loja') { h += listaPorLoja(toBuy); } else CATS.forEach(function(c){
     var its = toBuy.filter(function(i){ return i.ing.cat === c.id; })
       .sort(function(a, b){ return a.ing.nome.localeCompare(b.ing.nome, 'pt'); });
     if (!its.length) return;
-    h += '<div><div class="sect">' + c.nome + '</div><div class="card" style="padding-top:4px;padding-bottom:4px">' + its.map(liRow).join('') + '</div></div>';
+    h += '<div><div class="sect">' + c.nome + '</div><div class="card" style="padding-top:4px;padding-bottom:4px">' +
+      its.map(function(it){ return liRow(it, {dica: dicaBarato(it, melhores[it.ing.id])}); }).join('') + '</div></div>';
   });
 
   /* itens avulsos */
@@ -2263,7 +2305,7 @@ function viewLista(){
 }
 
 /* ---------- vista: Preços ---------- */
-var SRC_LABEL = {manual: 'manual', loja: 'loja', media: 'média', mediana: 'mediana', est: 'estimativa'};
+var SRC_LABEL = {manual: 'manual', loja: 'loja', media: 'média', mediana: 'média', est: 'estimativa'};
 function priceRows(){
   var q = norm(UI.pq), out = '', any = false;
   CATS.forEach(function(c){
@@ -2285,7 +2327,7 @@ function priceRows(){
 }
 function viewPrecos(){
   var st = storeObj(), note;
-  if (S.store === 'ref') note = 'Média de referência: mediana de Continente, Pingo Doce e Auchan, com preços ' + notaOrigemPrecos() + '. Os ingredientes marcados como estimativa ainda não têm preço recolhido.';
+  if (S.store === 'ref') note = 'Média de referência: média dos preços de Continente, Pingo Doce e Auchan, ' + notaOrigemPrecos() + '. Os ingredientes marcados como estimativa ainda não têm preço recolhido.';
   else if (storeHasData(S.store, S) && Object.keys(BOOK[S.store] || {}).length) note = 'Preços de ' + st.curto + ' ' + notaOrigemPrecos() + '. Os ingredientes sem dados desta loja usam a média.';
   else note = 'Ainda não tenho preços recolhidos de ' + st.curto + ', por isso mostro a média de Continente, Pingo Doce e Auchan. Escreve os preços que vês na loja e passam a valer só para ' + st.curto + '.';
   var h = '<div class="vh"><h1 class="h2">Preços</h1><div class="row"><button type="button" class="btn pri sm" data-act="scan-open">Ler etiqueta</button><button type="button" class="btn sm" data-act="fat-open">Ler fatura</button><button type="button" class="btn sm" data-act="new-ing">Novo ingrediente</button></div></div>';
