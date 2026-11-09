@@ -1,5 +1,5 @@
 // Edge Function "sugerir-receita": a partir da lista de produtos que a casa tem na app (com o preço da loja
-// escolhida) e/ou do que a pessoa escreve que tem em casa ("despensa"), pede ao Gemini uma receita original
+// escolhida) e/ou do que a pessoa escreve que tem em casa ("despensa"), pede à IA (Claude ou Gemini) uma receita original
 // que caiba no custo. A chave (ANTHROPIC_API_KEY ou GEMINI_API_KEY) fica no Supabase (Secrets).
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 import { pedirTextoIA } from "../_shared/ia.ts";
