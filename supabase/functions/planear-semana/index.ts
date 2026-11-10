@@ -2,11 +2,10 @@
 // Só pode escolher entre as opções que a app já validou para cada refeição (opcoes), por isso
 // não inventa receitas nem põe pratos onde não cabem. A chave (ANTHROPIC_API_KEY ou GEMINI_API_KEY) fica nos Secrets.
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
+import { servir } from "../_shared/cors.ts";
 import { pedirTextoIA, limiteDiario } from "../_shared/ia.ts";
 
-const ORIGEM = "https://bernardonfmendes.github.io";
 const cors = {
-  "Access-Control-Allow-Origin": ORIGEM,
   "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
@@ -30,7 +29,7 @@ Regras:
 type Receita = { id: string; nome: string; cat: string; custo: number; grupo: string };
 type Refeicao = { chave: string; dia: string; refeicao: string; opcoes: string[] };
 
-Deno.serve(async (req) => {
+servir(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
   if (req.method !== "POST") return json({ erro: "método" }, 405);
 

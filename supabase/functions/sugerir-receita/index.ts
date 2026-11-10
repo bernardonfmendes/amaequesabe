@@ -2,11 +2,10 @@
 // escolhida) e/ou do que a pessoa escreve que tem em casa ("despensa"), pede à IA (Claude ou Gemini) uma receita original
 // que caiba no custo. A chave (ANTHROPIC_API_KEY ou GEMINI_API_KEY) fica no Supabase (Secrets).
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
+import { servir } from "../_shared/cors.ts";
 import { pedirTextoIA, limiteDiario } from "../_shared/ia.ts";
 
-const ORIGEM = "https://bernardonfmendes.github.io";
 const cors = {
-  "Access-Control-Allow-Origin": ORIGEM,
   "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
@@ -38,7 +37,7 @@ const precoTexto = (u: string, base: number | null): string => {
   return base.toFixed(2) + " €/un";
 };
 
-Deno.serve(async (req) => {
+servir(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
   if (req.method !== "POST") return json({ erro: "método" }, 405);
 

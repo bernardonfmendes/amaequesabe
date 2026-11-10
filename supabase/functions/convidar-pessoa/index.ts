@@ -6,12 +6,10 @@
 // Usa a SERVICE_ROLE_KEY que o Supabase já põe disponível nas Edge Functions (nunca vai para o browser).
 // Deploy com verify_jwt = false (quem pede pode não ter conta).
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
+import { servir, appUrl } from "../_shared/cors.ts";
 
-const ORIGEM = "https://bernardonfmendes.github.io";
-const APP_URL = "https://bernardonfmendes.github.io/amaequesabe/";
 const MAX_PESSOAS = 3;
 const cors = {
-  "Access-Control-Allow-Origin": ORIGEM,
   "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
@@ -19,10 +17,11 @@ const json = (obj: unknown, status = 200) =>
   new Response(JSON.stringify(obj), { status, headers: { ...cors, "Content-Type": "application/json" } });
 const MUITOS = "Já foram pedidos muitos convites. Tenta daqui a uma hora.";
 
-Deno.serve(async (req) => {
+servir(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
   if (req.method !== "POST") return json({ erro: "método" }, 405);
 
+  const APP_URL = appUrl(req.headers.get("Origin"));
   let corpo: { email?: unknown };
   try { corpo = await req.json(); } catch { return json({ erro: "pedido inválido" }, 400); }
   const email = String(corpo.email ?? "").trim().toLowerCase();
