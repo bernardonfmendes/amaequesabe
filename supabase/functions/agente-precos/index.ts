@@ -241,33 +241,53 @@ Deno.serve(async (req) => {
     }
     const { data: ings } = await db.from("ingredientes_agente").select("*");
     const lista: Ing[] = (ings || []).map((i: any) => ({ ...i, pack: Number(i.pack), ref_base: i.ref_base == null ? null : Number(i.ref_base) }));
-    // ingredientes novos criados nas casas (customIngs): palavras tiradas do nome
-    const { data: casas } = await db.from("casa").select("state");
-    const vistosIds = new Set(lista.map((i) => i.id));
-    for (const cs of casas || []) for (const ci of (cs.state?.customIngs || [])) {
-      if (!ci?.id || vistosIds.has(ci.id) || !["g", "ml", "un"].includes(ci.u) || !(Number(ci.pack) > 0)) continue;
-      const pal = palavrasDe(String(ci.nome || ""));
-      if (!pal.length) continue;
-      vistosIds.add(ci.id);
-      lista.push({ id: ci.id, nome: ci.nome, u: ci.u, pack: Number(ci.pack), palavras: pal.slice(0, 2), alguma: null, excluir: [], ref_base: Number(ci.est) > 0 ? Number(ci.est) / Number(ci.pack) : null, _casa: true } as Ing);
+    // ingredientes novos criados em cada casa (customIngs): palavras tiradas do nome.
+    // Os resultados destes ficam na tabela precos_casa, que só a própria casa lê.
+    const { data: casas } = await db.from("casa").select("id,state");
+    const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+    const baseIds = new Set(lista.map((i) => i.id));
+    const porCasa: { casa: string; ings: Ing[] }[] = [];
+    for (const cs of casas || []) {
+      if (!UUID.test(String(cs.id))) continue;
+      const ingsCasa: Ing[] = [];
+      const vistos = new Set<string>();
+      for (const ci of (cs.state?.customIngs || [])) {
+        if (!ci?.id || baseIds.has(ci.id) || vistos.has(ci.id) || !["g", "ml", "un"].includes(ci.u) || !(Number(ci.pack) > 0)) continue;
+        const pal = palavrasDe(String(ci.nome || ""));
+        if (!pal.length) continue;
+        vistos.add(ci.id);
+        ingsCasa.push({ id: ci.id, nome: ci.nome, u: ci.u, pack: Number(ci.pack), palavras: pal.slice(0, 2), alguma: null, excluir: [], ref_base: Number(ci.est) > 0 ? Number(ci.est) / Number(ci.pack) : null, _casa: true } as Ing);
+      }
+      if (ingsCasa.length) porCasa.push({ casa: String(cs.id), ings: ingsCasa });
     }
-    const lojas: Record<string, Record<string, any>> = { continente: {}, auchan: {}, pingodoce: {} };
-    let total = 0;
-    for (const ing of lista) (ing as any)._gerais = geraisDe(ing);
-    for (const loja of Object.keys(lojas)) for (const ing of lista) {
-      const m = escolhe(ing, prods[loja]);
-      if (!m) continue;
-      const v = Math.round(m.preco_base * ing.pack * 100) / 100;
-      if (!(v > 0)) continue;
-      lojas[loja][ing.id] = { v, b: m.preco_base, p: m.nome, q: m.qtd, pr: m.preco, u: m.url };
-      total++;
+    const procura = (ings: Ing[]) => {
+      const res: Record<string, Record<string, any>> = { continente: {}, auchan: {}, pingodoce: {} };
+      let n = 0;
+      for (const ing of ings) (ing as any)._gerais = geraisDe(ing);
+      for (const loja of Object.keys(res)) for (const ing of ings) {
+        const m = escolhe(ing, prods[loja]);
+        if (!m) continue;
+        const v = Math.round(m.preco_base * ing.pack * 100) / 100;
+        if (!(v > 0)) continue;
+        res[loja][ing.id] = { v, b: m.preco_base, p: m.nome, q: m.qtd, pr: m.preco, u: m.url };
+        n++;
+      }
+      return { res, n };
+    };
+    const { res: lojas, n: total } = procura(lista);
+    const hoje = new Date().toISOString().slice(0, 10);
+    let casasComPrecos = 0;
+    for (const pc of porCasa) {
+      const { res, n } = procura(pc.ings);
+      const { error: e2 } = await db.from("precos_casa").upsert({ household_id: pc.casa, state: { atualizado: hoje, lojas: res }, atualizado: new Date().toISOString() });
+      if (!e2 && n) casasComPrecos++;
     }
-    const state = { fonte: "sites do Continente, Pingo Doce e Auchan", atualizado: new Date().toISOString().slice(0, 10), recolhido: new Date().toISOString(),
+    const state = { fonte: "sites do Continente, Pingo Doce e Auchan", atualizado: hoje, recolhido: new Date().toISOString(),
       produtosLidos: { continente: prods.continente.length, auchan: prods.auchan.length, pingodoce: prods.pingodoce.length },
       ingredientes: lista.length, lojas };
     const { error } = await db.from("precos").upsert({ id: "lojas", state, saved_at: Date.now(), updated_by: "agente-precos" });
     if (error) return json({ erro: error.message }, 500);
-    return json({ ok: true, ingredientes: lista.length, precos: total,
+    return json({ ok: true, ingredientes: lista.length, precos: total, casasComPrecos,
       porLoja: Object.fromEntries(Object.entries(lojas).map(([k, v]) => [k, Object.keys(v).length])), produtosLidos: state.produtosLidos });
   }
   return json({ erro: "modo desconhecido" }, 400);

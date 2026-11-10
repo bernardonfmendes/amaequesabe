@@ -2,7 +2,7 @@
 // e devolve JSON. A IA é a Claude (ANTHROPIC_API_KEY) ou, sem ela, o Gemini (GEMINI_API_KEY).
 // As chaves ficam no Supabase (Secrets), nunca no site.
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
-import { pedirIA } from "../_shared/ia.ts";
+import { pedirIA, limiteDiario } from "../_shared/ia.ts";
 
 const ORIGEM = "https://bernardonfmendes.github.io";
 const cors = {
@@ -37,6 +37,8 @@ Deno.serve(async (req) => {
   if (!user || !user.email) return json({ erro: "sem sessão" }, 401);
   const { data: autorizado } = await supa.from("allowed_emails").select("email").eq("email", user.email).maybeSingle();
   if (!autorizado) return json({ erro: "conta não autorizada" }, 403);
+  const limite = await limiteDiario(supa, "ler-fatura", 15, "faturas lidas");
+  if (limite) return json({ erro: limite }, 429);
 
   let corpo: { texto?: string };
   try { corpo = await req.json(); } catch { return json({ erro: "pedido inválido" }, 400); }

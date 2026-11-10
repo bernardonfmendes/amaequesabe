@@ -94,3 +94,11 @@ export async function pedirIA(p: Pedido): Promise<Resposta> {
 
 // compatibilidade com as funções que só enviam texto
 export const pedirTextoIA = (texto: string, temperatura: number) => pedirIA({ texto, temperatura });
+
+// limite diário de pedidos por casa (tabela uso_ia, função ia_registar no Supabase).
+// "supa" é o cliente criado com a sessão de quem pede. Devolve null se pode continuar, ou a mensagem de limite.
+export async function limiteDiario(supa: any, funcao: string, limite: number, oQue: string): Promise<string | null> {
+  const { data, error } = await supa.rpc("ia_registar", { funcao, limite });
+  if (error) return "Não consegui confirmar o limite de uso. Tenta outra vez.";
+  return data === true ? null : "A tua casa chegou ao limite de " + limite + " " + oQue + " por dia. Tenta amanhã.";
+}

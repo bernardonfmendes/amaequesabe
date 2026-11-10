@@ -2,7 +2,7 @@
 // Só pode escolher entre as opções que a app já validou para cada refeição (opcoes), por isso
 // não inventa receitas nem põe pratos onde não cabem. A chave (ANTHROPIC_API_KEY ou GEMINI_API_KEY) fica nos Secrets.
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
-import { pedirTextoIA } from "../_shared/ia.ts";
+import { pedirTextoIA, limiteDiario } from "../_shared/ia.ts";
 
 const ORIGEM = "https://bernardonfmendes.github.io";
 const cors = {
@@ -43,6 +43,8 @@ Deno.serve(async (req) => {
   if (!user || !user.email) return json({ erro: "sem sessão" }, 401);
   const { data: autorizado } = await supa.from("allowed_emails").select("email").eq("email", user.email).maybeSingle();
   if (!autorizado) return json({ erro: "conta não autorizada" }, 403);
+  const limite = await limiteDiario(supa, "planear-semana", 10, "planos da semana");
+  if (limite) return json({ erro: limite }, 429);
 
   let corpo: any;
   try { corpo = await req.json(); } catch { return json({ erro: "pedido inválido" }, 400); }
