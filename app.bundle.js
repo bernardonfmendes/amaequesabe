@@ -1589,6 +1589,7 @@ function limparDadosLocais(){
   try { [LS_KEY, UNSYNC_KEY, BACKUP_KEY, DONO_KEY].forEach(function(k){ localStorage.removeItem(k); }); } catch (e) {}
   S = defaultState(); rebuildIngIndex(S);
   if (CASA_LOJAS) { CASA_LOJAS = null; }
+  if (typeof PESSOAS !== 'undefined') { PESSOAS.dados = null; PESSOAS.msg = ''; }
 }
 var PENDING_REMOTE = null;          /* alteração da casa recebida enquanto um campo estava ativo */
 var PASS_RECOVERY = false;          /* veio do link "esqueci-me da palavra-passe" */
@@ -2452,19 +2453,80 @@ function backupHTML(){
     (hasBackup ? '<button type="button" class="btn" data-act="backup-restore">Restaurar cópia deste dispositivo</button>' : '') +
     '</div></div></details>';
 }
+/* mensagem de erro que a função devolveu (o Supabase põe-na dentro do erro quando a resposta não é 2xx) */
+function erroDaFuncao(r){
+  if (r && r.data && r.data.erro) return Promise.resolve(r.data.erro);
+  var ctx = r && r.error && r.error.context;
+  if (ctx && typeof ctx.json === 'function') return ctx.json().then(function(d){ return d && d.erro; }, function(){ return null; });
+  return Promise.resolve(null);
+}
 function pedirConvite(){
-  var em = (LOGIN.convEmail || '').trim();
+  var em = (LOGIN.convEmail || '').trim().toLowerCase();
   if (!SB){ toast('A ligação à casa não está configurada.'); return; }
   if (!/^\S+@\S+\.\S+$/.test(em)){ toast('Escreve um email válido.'); return; }
-  LOGIN.msg = 'A enviar…'; refreshLogin();
+  if (LOGIN.enviando) return;
+  LOGIN.enviando = true; LOGIN.msg = 'A enviar…'; refreshLogin();
   SB.functions.invoke('convidar-pessoa', {body: {email: em}}).then(function(r){
     if (r.error || !r.data || r.data.erro){
-      LOGIN.msg = (r.data && r.data.erro) || 'Não consegui enviar o convite. Tenta outra vez.';
-    } else {
-      LOGIN.msg = 'Pronto. Vê o teu email e segue o link para criares a palavra-passe.';
-      LOGIN.convEmail = '';
+      return erroDaFuncao(r).then(function(m){ LOGIN.msg = m || 'Não consegui enviar o convite. Tenta outra vez.'; });
     }
+    LOGIN.msg = SESSION ? 'Convite enviado para ' + em + '. A pessoa recebe um email para criar a palavra-passe.' : 'Pronto. Vê o teu email e segue o link para criares a palavra-passe.';
+    LOGIN.convEmail = '';
+    if (SESSION) carregarPessoas();
+  }).then(function(){ LOGIN.enviando = false; refreshLogin(); }, function(){ LOGIN.enviando = false; LOGIN.msg = 'Não consegui enviar o convite. Tenta outra vez.'; refreshLogin(); });
+}
+/* ---------- pessoas da casa: quem está, convites por aceitar, administradores ---------- */
+var PESSOAS = {dados: null, msg: '', confirmar: '', ocupado: false};
+function carregarPessoas(){
+  if (!SB || !SESSION) return;
+  SB.rpc('casa_pessoas').then(function(r){
+    if (r.error){ PESSOAS.msg = 'Não consegui ver as pessoas da casa.'; }
+    else PESSOAS.dados = r.data;
     refreshLogin();
+  });
+}
+function pessoasHTML(){
+  var d = PESSOAS.dados;
+  var h = '<div class="sect" style="margin-top:8px">Pessoas da casa</div>';
+  if (!d) return h + '<p class="note">A carregar…</p>';
+  var total = (d.membros || []).length + (d.convites || []).length;
+  h += '<p class="note">' + total + ' de 3 lugares ocupados (contando convites por aceitar).' + (d.eu_admin ? ' Como administrador, podes remover pessoas e cancelar convites.' : '') + '</p>';
+  (d.membros || []).forEach(function(m){
+    var acoes = '';
+    if (d.eu_admin && !m.eu){
+      var conf = PESSOAS.confirmar === m.email;
+      acoes = '<button type="button" class="btn sm' + (conf ? ' danger' : '') + '" data-act="casa-remover" data-email="' + esc(m.email) + '">' + (conf ? 'Confirmar remover' : 'Remover') + '</button>' +
+        '<button type="button" class="linkbtn" data-act="casa-papel" data-email="' + esc(m.email) + '" data-papel="' + (m.papel === 'admin' ? 'membro' : 'admin') + '">' + (m.papel === 'admin' ? 'Tirar de administrador' : 'Tornar administrador') + '</button>';
+    }
+    h += '<div class="prow"><div><div class="pn">' + esc(m.email) + (m.eu ? ' (tu)' : '') + '</div><div class="ps">' + (m.papel === 'admin' ? 'Administrador' : 'Membro') + '</div></div>' +
+      '<div class="pedit" style="flex-direction:column;align-items:flex-end;gap:2px">' + acoes + '</div></div>';
+  });
+  (d.convites || []).forEach(function(email){
+    var conf = PESSOAS.confirmar === email;
+    h += '<div class="prow"><div><div class="pn">' + esc(email) + '</div><div class="ps">Convite por aceitar</div></div>' +
+      (d.eu_admin ? '<div class="pedit"><button type="button" class="btn sm' + (conf ? ' danger' : '') + '" data-act="casa-remover" data-email="' + esc(email) + '">' + (conf ? 'Confirmar cancelar' : 'Cancelar convite') + '</button></div>' : '') + '</div>';
+  });
+  if (PESSOAS.msg) h += '<p class="note" role="status">' + esc(PESSOAS.msg) + '</p>';
+  return h;
+}
+function casaRemover(el){
+  var email = el.dataset.email;
+  if (PESSOAS.confirmar !== email){ PESSOAS.confirmar = email; PESSOAS.msg = ''; refreshLogin(); return; }   /* segundo toque confirma */
+  if (PESSOAS.ocupado) return;
+  PESSOAS.ocupado = true; PESSOAS.confirmar = ''; LOGIN.msg = '';
+  SB.rpc('casa_remover', {alvo: email}).then(function(r){
+    PESSOAS.ocupado = false;
+    PESSOAS.msg = r.error ? (r.error.message || 'Não consegui remover.') : (r.data === 'convite cancelado' ? 'Convite para ' + email + ' cancelado.' : email + ' saiu da casa.');
+    carregarPessoas();
+  });
+}
+function casaPapel(el){
+  if (PESSOAS.ocupado) return;
+  PESSOAS.ocupado = true; PESSOAS.confirmar = '';
+  SB.rpc('casa_papel', {alvo: el.dataset.email, novo: el.dataset.papel}).then(function(r){
+    PESSOAS.ocupado = false;
+    PESSOAS.msg = r.error ? (r.error.message || 'Não consegui mudar.') : 'Feito.';
+    carregarPessoas();
   });
 }
 function gateHTML(){
@@ -2971,6 +3033,7 @@ function saveScan(){
 }
 
 function conviteMembroHTML(){
+  if (PESSOAS.dados && !PESSOAS.dados.eu_admin) return '<p class="note">Só um administrador da casa pode convidar pessoas.</p>';
   return '<div class="sect" style="margin-top:8px">Convidar para esta casa</div>' +
     '<p class="note">Quem entrar por este convite fica nesta casa, com a semana, as receitas e a lista.</p>' +
     '<input class="inp" type="email" autocomplete="email" inputmode="email" placeholder="o.teu@email.com" data-l="convEmail" aria-label="Email para convidar" value="' + esc(LOGIN.convEmail || '') + '">' +
@@ -2981,6 +3044,7 @@ function sheetLogin(){
   if (SESSION && !PASS_RECOVERY){
     h += '<p class="note">Estás ligado como <b>' + esc(SESSION.user.email) + '</b>. A semana, as receitas, os preços e a lista são partilhados com quem também estiver ligado à casa.</p>';
     h += '<p class="note">As alterações são guardadas automaticamente. Para veres logo o que os outros guardaram, carrega em <b>Receber da casa</b> (no cabeçalho).</p>';
+    h += pessoasHTML();
     h += conviteMembroHTML();
     if (LOGIN.msg) h += '<p class="note" role="status">' + esc(LOGIN.msg) + '</p>';
     h += '<button type="button" class="btn block" data-act="logout">Sair</button>';
@@ -3568,7 +3632,9 @@ var ACTS = {
   'scan-back': function(){ SC.step = 'photo'; SC.error = ''; renderSheet(false); },
   'scan-cand': function(el){ SC.price = el.dataset.v; renderSheet(false); },
   'scan-save': saveScan,
-  'login-open': function(){ LOGIN.msg = ''; openSheet({type: 'login'}); },
+  'login-open': function(){ LOGIN.msg = ''; PESSOAS.msg = ''; PESSOAS.confirmar = ''; openSheet({type: 'login'}); carregarPessoas(); },
+  'casa-remover': casaRemover,
+  'casa-papel': casaPapel,
   'menu-open': function(){ openSheet({type: 'menu'}); },
   'casa-guardar': function(){ pushSafe(); },
   'fat-open': function(){ FAT = {step: 'pick', busy: false, msg: ''}; openSheet({type: 'fatura'}); },
