@@ -1,0 +1,4 @@
+supabase/
+supabase-schema.sql
+README.md
+*.patch
