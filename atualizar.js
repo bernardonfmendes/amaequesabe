@@ -1,5 +1,5 @@
   /* Versão desta página. Ao publicar uma versão nova, sobe este número, version.json e o ?v= dos scripts. */
-  var APP_VERSION = 32;
+  var APP_VERSION = 33;
   /* Atualiza a app mesmo quando o telemóvel (Safari, app no ecrã principal) guarda uma versão antiga:
      volta a pedir ao servidor a página e os scripts, e depois recarrega. */
   function atualizarApp(botao){
