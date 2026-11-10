@@ -2,11 +2,10 @@
 // e devolve JSON. A IA é a Claude (ANTHROPIC_API_KEY) ou, sem ela, o Gemini (GEMINI_API_KEY).
 // As chaves ficam no Supabase (Secrets), nunca no site.
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
+import { servir } from "../_shared/cors.ts";
 import { pedirIA, limiteDiario } from "../_shared/ia.ts";
 
-const ORIGEM = "https://bernardonfmendes.github.io";
 const cors = {
-  "Access-Control-Allow-Origin": ORIGEM,
   "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
@@ -24,7 +23,7 @@ Ignora linhas de descontos, poupanças, totais, IVA, pagamentos e moradas. Não 
 Texto da fatura:
 `;
 
-Deno.serve(async (req) => {
+servir(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
   if (req.method !== "POST") return json({ erro: "método" }, 405);
 

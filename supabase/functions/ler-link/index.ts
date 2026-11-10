@@ -2,11 +2,10 @@
 // e devolve título, descrição e receita estruturada (JSON-LD), se existir. Só para utilizadores ligados.
 // Não é garantido: muitas redes sociais só mostram a legenda; nesses casos a app pede para colar o texto.
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
+import { servir } from "../_shared/cors.ts";
 import { limiteDiario } from "../_shared/ia.ts";
 
-const ORIGEM = "https://bernardonfmendes.github.io";
 const cors = {
-  "Access-Control-Allow-Origin": ORIGEM,
   "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
@@ -53,7 +52,7 @@ function meta(html: string, nome: string): string {
   return m ? decodificar(m[1]) : "";
 }
 
-Deno.serve(async (req) => {
+servir(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
   if (req.method !== "POST") return json({ erro: "método" }, 405);
 
