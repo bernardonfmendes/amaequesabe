@@ -1,13 +1,15 @@
 // Edge Function "convidar-pessoa": pede-se um convite com um email.
-// - Quem pede sem sessão: a pessoa fica com uma casa nova (cópia dos dados atuais).
-// - Quem pede com sessão e já tem casa (um membro): a pessoa entra nessa mesma casa.
+// - Quem pede sem sessão: a pessoa fica com uma casa nova e VAZIA (não leva dados de ninguém).
+// - Quem pede com sessão e já tem casa: a pessoa entra nessa mesma casa, até 3 pessoas por casa.
 // Em qualquer caso: o email fica autorizado (allowed_emails) e chega um email para criar/definir a palavra-passe.
+// Limites contra abusos: por email, por quem convida e no total de pedidos sem sessão.
 // Usa a SERVICE_ROLE_KEY que o Supabase já põe disponível nas Edge Functions (nunca vai para o browser).
 // Deploy com verify_jwt = false (quem pede pode não ter conta).
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 
 const ORIGEM = "https://bernardonfmendes.github.io";
 const APP_URL = "https://bernardonfmendes.github.io/amaequesabe/";
+const MAX_PESSOAS = 3;
 const cors = {
   "Access-Control-Allow-Origin": ORIGEM,
   "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info",
@@ -15,6 +17,7 @@ const cors = {
 };
 const json = (obj: unknown, status = 200) =>
   new Response(JSON.stringify(obj), { status, headers: { ...cors, "Content-Type": "application/json" } });
+const MUITOS = "Já foram pedidos muitos convites. Tenta daqui a uma hora.";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
@@ -34,14 +37,41 @@ Deno.serve(async (req) => {
 
   // quem convida: se for um membro de uma casa, o convidado entra nessa casa
   const token = (req.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
+  let quemId: string | null = null;
   let casaDeQuemConvida: string | null = null;
   if (token) {
     const { data: { user: quem } } = await admin.auth.getUser(token);
     if (quem) {
+      quemId = quem.id;
       const { data: membro } = await admin.from("household_members")
         .select("household_id").eq("user_id", quem.id).maybeSingle();
       casaDeQuemConvida = membro?.household_id ?? null;
     }
+  }
+
+  // limites: o mesmo email no máximo 1 vez em 10 minutos e 3 por dia; quem convida até 10 por dia;
+  // pedidos sem sessão até 20 por hora no total
+  const agora = Date.now();
+  const desde = (ms: number) => new Date(agora - ms).toISOString();
+  const conta = async (filtro: (q: any) => any, ms: number) => {
+    const { count } = await filtro(admin.from("convite_pedidos").select("id", { count: "exact", head: true }).gte("pedido_em", desde(ms)));
+    return count ?? 0;
+  };
+  if (await conta((q) => q.eq("email", email), 10 * 60000) >= 1) return json({ erro: "Já enviámos um email para este endereço há pouco. Vê a caixa de correio (e o spam)." }, 429);
+  if (await conta((q) => q.eq("email", email), 86400000) >= 3) return json({ erro: MUITOS }, 429);
+  if (quemId && await conta((q) => q.eq("quem", quemId), 86400000) >= 10) return json({ erro: "Chegaste ao limite de convites de hoje." }, 429);
+  if (!quemId && await conta((q) => q.is("quem", null), 3600000) >= 20) return json({ erro: MUITOS }, 429);
+  await admin.from("convite_pedidos").insert({ email, quem: quemId });
+  // limpeza dos pedidos com mais de 30 dias
+  await admin.from("convite_pedidos").delete().lt("pedido_em", desde(30 * 86400000));
+
+  // casa com lugar: no máximo 3 pessoas, contando os convites ainda por aceitar
+  if (casaDeQuemConvida) {
+    const { count: membros } = await admin.from("household_members").select("user_id", { count: "exact", head: true }).eq("household_id", casaDeQuemConvida);
+    const { data: jaMembro } = await admin.from("household_members").select("user_id").eq("household_id", casaDeQuemConvida).eq("email", email).maybeSingle();
+    if (jaMembro) return json({ erro: "Essa pessoa já faz parte da casa." }, 400);
+    const { count: pendentes } = await admin.from("convites").select("email", { count: "exact", head: true }).eq("household_id", casaDeQuemConvida).neq("email", email);
+    if ((membros ?? 0) + (pendentes ?? 0) >= MAX_PESSOAS) return json({ erro: "A casa já tem " + MAX_PESSOAS + " pessoas (contando os convites por aceitar)." }, 400);
   }
 
   // 1) autorizar o email (idempotente)

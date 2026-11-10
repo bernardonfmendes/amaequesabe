@@ -1580,6 +1580,16 @@ function plural(n, one, many){ return n === 1 ? one : many; }
 
 /* ---------- guardar e sincronizar (Supabase: uma casa, login com email e palavra-passe) ---------- */
 var BACKUP_KEY = 'budgetchef.backup', UNSYNC_KEY = 'budgetchef.unsynced';
+var DONO_KEY = 'budgetchef.dono';   /* de que conta e de que casa são os dados guardados neste dispositivo */
+var CASA_LOJAS = null;              /* preços dos produtos próprios desta casa (tabela precos_casa) */
+function lerDono(){ try { return JSON.parse(localStorage.getItem(DONO_KEY) || 'null'); } catch (e) { return null; } }
+function gravarDono(uid, casa){ try { localStorage.setItem(DONO_KEY, JSON.stringify({uid: uid, casa: casa})); } catch (e) {} }
+/* apaga deste dispositivo os dados da casa (ao sair ou ao entrar com outra conta) */
+function limparDadosLocais(){
+  try { [LS_KEY, UNSYNC_KEY, BACKUP_KEY, DONO_KEY].forEach(function(k){ localStorage.removeItem(k); }); } catch (e) {}
+  S = defaultState(); rebuildIngIndex(S);
+  if (CASA_LOJAS) { CASA_LOJAS = null; }
+}
 var PENDING_REMOTE = null;          /* alteração da casa recebida enquanto um campo estava ativo */
 var PASS_RECOVERY = false;          /* veio do link "esqueci-me da palavra-passe" */
 
@@ -1726,11 +1736,17 @@ function pullRemote(){
   return SB.rpc('minha_casa').then(function(r){
     if (r.error) throw r.error;
     REMOTE.casaId = r.data;
+    /* os dados deste dispositivo só se juntam aos da casa se forem desta conta e desta casa;
+       dados de outra conta (ou de antes desta verificação) nunca são enviados: ficam os da casa */
+    var dono = lerDono(), uid = SESSION && SESSION.user && SESSION.user.id;
+    REMOTE.localConfiavel = !!(dono && dono.uid === uid && dono.casa === REMOTE.casaId);
+    if (dono && !REMOTE.localConfiavel) limparDadosLocais();
     return Promise.all([
       SB.from('casa').select('state,saved_at').eq('id', REMOTE.casaId).maybeSingle(),
       SB.from('precos').select('state').eq('id', 'global').maybeSingle(),
       SB.from('precos').select('state').eq('id', 'ativos').maybeSingle(),
-      SB.from('precos').select('state').eq('id', 'lojas').maybeSingle()
+      SB.from('precos').select('state').eq('id', 'lojas').maybeSingle(),
+      SB.from('precos_casa').select('state').eq('household_id', REMOTE.casaId).maybeSingle()
     ]);
   }).then(function(res){
     if (res[0].error) throw res[0].error;
@@ -1738,8 +1754,24 @@ function pullRemote(){
     /* preços online da semana (se falhar, a app continua com os preços que já tem) */
     if (res[2] && !res[2].error && res[2].data && res[2].data.state) aplicaAtivos(res[2].data.state, true);
     if (res[3] && !res[3].error && res[3].data && res[3].data.state) aplicaLojas(res[3].data.state, true);
+    /* preços dos produtos criados nesta casa: só esta casa os vê, não ficam guardados no dispositivo */
+    if (res[4] && !res[4].error && res[4].data && res[4].data.state){
+      var ag = AGENTE; CASA_LOJAS = res[4].data.state; aplicaLojas(CASA_LOJAS, false); AGENTE = ag;
+    }
     REMOTE.precos = (res[1].data && res[1].data.state) || {};
     S.prices = clone(REMOTE.precos);
+    if (!REMOTE.localConfiavel){
+      /* dados locais sem dono conhecido: a casa manda; o que havia neste dispositivo fica numa cópia de segurança */
+      if (isUnsynced()) backupLocal();
+      markUnsynced(false);
+      var row = res[0].data;
+      if (row && row.state) applyRemote(row.state, row.saved_at || 0);
+      else { S = defaultState(); rebuildIngIndex(S); saveLocal(); }
+      gravarDono(SESSION.user.id, REMOTE.casaId);
+      REMOTE.localConfiavel = true;
+      if (!row || !row.state) pushRemote();
+      return;
+    }
     reconcile(res[0].data);
   });
 }
@@ -1818,6 +1850,8 @@ function initRemote(){
 function syncErr(err){
   var m = (err && (err.message || err.details || err.hint)) || '';
   var code = (err && err.code) || '';
+  if (/sem convite/i.test(m)) return 'Esta conta ainda não tem convite. Pede um convite no ecrã de entrada.';
+  if (/casa cheia/i.test(m)) return 'A casa para onde foste convidado já tem 3 pessoas.';
   if (code === '42501' || /row-level security|permission denied/i.test(m)) return 'Esta conta não está na lista da casa (allowed_emails).';
   if (code === 'PGRST205' || /relation .* does not exist|could not find the table/i.test(m)) return 'A base de dados ainda não tem as tabelas. Falta correr supabase-schema.sql.';
   if (/invalid api key|jwt|apikey/i.test(m)) return 'A chave do Supabase em config.js não está correta.';
@@ -1867,6 +1901,7 @@ function logout(){
   if (!SB) return;
   SB.auth.signOut().then(function(){
     SESSION = null; stopSync(); setSync('local');
+    limparDadosLocais();
     refreshLogin(); toast('Saíste da casa.');
   });
 }
@@ -2401,7 +2436,7 @@ function isGated(){ return !SESSION || PASS_RECOVERY; }
 function conviteHTML(){
   return '<details class="sub"><summary style="cursor:pointer;list-style:none;color:#5b6376;font-weight:700;font-size:15px;min-height:44px;display:flex;align-items:center">Ainda não tens conta?</summary>' +
     '<div style="display:flex;flex-direction:column;gap:10px;padding:6px 0 4px">' +
-    '<p class="note" style="margin:0">Escreve o teu email e recebes um link para criares a palavra-passe.</p>' +
+    '<p class="note" style="margin:0">Escreve o teu email e recebes um link para criares a palavra-passe. A tua casa começa vazia; para entrares na casa de alguém, pede a essa pessoa que te convide.</p>' +
     '<input class="inp" type="email" autocomplete="email" inputmode="email" placeholder="o.teu@email.com" data-l="convEmail" aria-label="Email para o convite" value="' + esc(LOGIN.convEmail || '') + '">' +
     '<button type="button" class="btn block" data-act="login-convite">Pedir convite</button>' +
     '</div></details>';
