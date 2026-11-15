@@ -3913,3 +3913,13 @@ initRemote();
 
 })();
 
+/* topo fixo: encolhe o cabeçalho quando se desce; a margem entre 20 e 90 px evita que salte para trás e para a frente */
+(function(){
+  var compacto = false;
+  function ver(){
+    var y = window.scrollY || 0, novo = compacto ? y > 20 : y > 90;
+    if (novo !== compacto){ compacto = novo; document.body.classList.toggle('compact', compacto); }
+  }
+  window.addEventListener('scroll', ver, {passive: true});
+  ver();
+})();
