@@ -8,58 +8,63 @@
 <meta name="apple-mobile-web-app-title" content="A Mãe é que Sabe">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2">
-<meta name="theme-color" content="#FFF6F2">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Courier+Prime:wght@400;700&family=Nunito:wght@400;600;700;800&display=swap">
+<meta name="theme-color" content="#E7EDF6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0A1430" media="(prefers-color-scheme: dark)">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&family=Young+Serif&display=swap">
 <style>
-/* Layout: um caderno de receitas pousado numa toalha de xadrez. A folha (.shell) leva o cabeçalho, as definições da semana e a vista ativa; as fichas são cartões de papel com bainha cosida a tracejado; os separadores ficam numa tira de pano no fundo. Títulos e etiquetas à mão (Caveat), texto corrido em Nunito, números e fichas de ingredientes em Courier Prime. Os preços são pedaços de fita-cola amarela com o valor escrito por cima; é o único toque forte. */
+/* Visual "Azulejo": vidrado branco e azul-cobalto. O único gesto decorativo é a faixa de azulejo no topo da folha e das fichas (--tile). Títulos em Young Serif (tabuleta de loja antiga); o resto, incluindo números e preços, em Figtree com algarismos de largura fixa. O amarelo-mostarda fica reservado aos preços. */
 :root{
-  --bg:#FFF6F2;            /* toalha: base */
-  --check:rgba(190,48,40,.14);
-  --paper:#FFFDF8;         /* folha do caderno */
+  --bg:#E7EDF6;            /* vidrado azulado à volta da folha */
+  --paper:#FFFFFF;
   --card:#FFFFFF;
-  --field:#FFFFFF;
-  --ink:#1F2A44;           /* tinta de caneta azul-escura */
-  --ink-2:#56607E;
-  --line:#E4D8CC;
-  --line-2:#F0E8DE;
-  --line-d:#CBBBA9;        /* costura e contornos */
-  --rule:#BFD1EC;          /* linhas do caderno */
-  --accent:#B3302A;        /* tomate */
-  --accent-d:#841F1A;
+  --field:#F6F8FC;
+  --ink:#0E2552;           /* azul-cobalto escuro */
+  --ink-2:#526184;
+  --line:#D6DEEB;
+  --line-2:#EBF0F7;
+  --line-d:#BFCBDF;
+  --rule:#E3E9F2;
+  --accent:#1F4FB5;        /* cobalto do azulejo */
+  --accent-d:#163C8C;
   --on-accent:#FFFFFF;
-  --accent-soft:#FBE4DF;
-  --tag:#F7D84E;           /* fita-cola e marcador */
-  --tag-d:#D9B82C;
-  --mark:#F7D84E;          /* marcador por baixo do separador ativo */
-  --on-tag:#2A2410;
-  --ok:#2C7A4B; --ok-soft:#DDF0E3;
-  --warn:#8F5509; --warn-soft:#FBEBCB;
-  --bad:#A4231B; --bad-soft:#F8DAD6;
-  --scrim:rgba(31,20,18,.55);
-  --shadow:rgba(60,35,25,.16);
-  --f-display:'Caveat','Segoe Print','Bradley Hand','Comic Sans MS',cursive;
-  --f-body:'Nunito',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
-  --f-mono:'Courier Prime',ui-monospace,'Courier New',monospace;
+  --accent-soft:#E3EBFB;
+  --tag:#F2B632;           /* mostarda: só nos preços */
+  --tag-d:#D99A12;
+  --mark:#F2B632;
+  --on-tag:#2C1E00;
+  --ok:#22764A; --ok-soft:#DCF1E4;
+  --warn:#8A5300; --warn-soft:#FBEBCB;
+  --bad:#B42318; --bad-soft:#FBE0DC;
+  --scrim:rgba(10,20,48,.55);
+  --shadow:rgba(14,37,82,.14);
+  --tile:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44'%3E%3Cg fill='none' stroke='%231F4FB5' stroke-width='2.4'%3E%3Ccircle r='15'/%3E%3Ccircle cx='44' r='15'/%3E%3Ccircle cy='44' r='15'/%3E%3Ccircle cx='44' cy='44' r='15'/%3E%3Cpath d='M22 9l13 13-13 13L9 22z'/%3E%3C/g%3E%3Ccircle cx='22' cy='22' r='4' fill='%23F2B632'/%3E%3Ccircle r='6' fill='%231F4FB5'/%3E%3Ccircle cx='44' r='6' fill='%231F4FB5'/%3E%3Ccircle cy='44' r='6' fill='%231F4FB5'/%3E%3Ccircle cx='44' cy='44' r='6' fill='%231F4FB5'/%3E%3C/svg%3E");
+  --f-display:'Young Serif',Georgia,serif;
+  --f-body:'Figtree',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --f-mono:'Figtree',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --bg:#2B1F1D; --check:rgba(255,125,105,.11); --paper:#231C1B; --card:#2E2625; --field:#1D1716;
-    --ink:#F6EBDD; --ink-2:#C3B5A8; --line:#4B3E3A; --line-2:#3A302D; --line-d:#6A5A53; --rule:#41536F;
-    --accent:#FF8E7F; --accent-d:#B9584B; --on-accent:#3B0E09; --accent-soft:#4A2622;
-    --tag:#F0CF55; --tag-d:#C9A92F; --on-tag:#2A2410; --mark:rgba(240,207,85,.42);
-    --ok:#62CB8E; --ok-soft:#183626; --warn:#F3B756; --warn-soft:#3D2F12; --bad:#FF8A80; --bad-soft:#431D1A;
+    --bg:#0A1430; --paper:#101C3D; --card:#15234A; --field:#0C1736;
+    --ink:#EAF0FF; --ink-2:#A3B2D6; --line:#24366A; --line-2:#1A2954; --line-d:#30467F; --rule:#1E2E5C;
+    --accent:#8FB0FF; --accent-d:#5F86E6; --on-accent:#0A1430; --accent-soft:#1D3170;
+    --tag:#F2B632; --tag-d:#D99A12; --on-tag:#2C1E00; --mark:#F2B632;
+    --ok:#62CB8E; --ok-soft:#163626; --warn:#F3B756; --warn-soft:#3D2F12; --bad:#FF8A80; --bad-soft:#431D1A;
     --scrim:rgba(0,0,0,.68); --shadow:rgba(0,0,0,.45);
+    --tile:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44'%3E%3Cg fill='none' stroke='%238FB0FF' stroke-width='2.4'%3E%3Ccircle r='15'/%3E%3Ccircle cx='44' r='15'/%3E%3Ccircle cy='44' r='15'/%3E%3Ccircle cx='44' cy='44' r='15'/%3E%3Cpath d='M22 9l13 13-13 13L9 22z'/%3E%3C/g%3E%3Ccircle cx='22' cy='22' r='4' fill='%23F2B632'/%3E%3Ccircle r='6' fill='%238FB0FF'/%3E%3Ccircle cx='44' r='6' fill='%238FB0FF'/%3E%3Ccircle cy='44' r='6' fill='%238FB0FF'/%3E%3Ccircle cx='44' cy='44' r='6' fill='%238FB0FF'/%3E%3C/svg%3E");
     color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
-  --bg:#2B1F1D; --check:rgba(255,125,105,.11); --paper:#231C1B; --card:#2E2625; --field:#1D1716;
-  --ink:#F6EBDD; --ink-2:#C3B5A8; --line:#4B3E3A; --line-2:#3A302D; --line-d:#6A5A53; --rule:#41536F;
-  --accent:#FF8E7F; --accent-d:#B9584B; --on-accent:#3B0E09; --accent-soft:#4A2622;
-  --tag:#F0CF55; --tag-d:#C9A92F; --on-tag:#2A2410; --mark:rgba(240,207,85,.42);
-  --ok:#62CB8E; --ok-soft:#183626; --warn:#F3B756; --warn-soft:#3D2F12; --bad:#FF8A80; --bad-soft:#431D1A;
-  --scrim:rgba(0,0,0,.68); --shadow:rgba(0,0,0,.45);
-  color-scheme:dark;
+  --bg:#0A1430; --paper:#101C3D; --card:#15234A; --field:#0C1736;
+    --ink:#EAF0FF; --ink-2:#A3B2D6; --line:#24366A; --line-2:#1A2954; --line-d:#30467F; --rule:#1E2E5C;
+    --accent:#8FB0FF; --accent-d:#5F86E6; --on-accent:#0A1430; --accent-soft:#1D3170;
+    --tag:#F2B632; --tag-d:#D99A12; --on-tag:#2C1E00; --mark:#F2B632;
+    --ok:#62CB8E; --ok-soft:#163626; --warn:#F3B756; --warn-soft:#3D2F12; --bad:#FF8A80; --bad-soft:#431D1A;
+    --scrim:rgba(0,0,0,.68); --shadow:rgba(0,0,0,.45);
+    --tile:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44'%3E%3Cg fill='none' stroke='%238FB0FF' stroke-width='2.4'%3E%3Ccircle r='15'/%3E%3Ccircle cx='44' r='15'/%3E%3Ccircle cy='44' r='15'/%3E%3Ccircle cx='44' cy='44' r='15'/%3E%3Cpath d='M22 9l13 13-13 13L9 22z'/%3E%3C/g%3E%3Ccircle cx='22' cy='22' r='4' fill='%23F2B632'/%3E%3Ccircle r='6' fill='%238FB0FF'/%3E%3Ccircle cx='44' r='6' fill='%238FB0FF'/%3E%3Ccircle cy='44' r='6' fill='%238FB0FF'/%3E%3Ccircle cx='44' cy='44' r='6' fill='%238FB0FF'/%3E%3C/svg%3E");
+    color-scheme:dark;
 }
 
 *,*::before,*::after{box-sizing:border-box}
@@ -394,6 +399,71 @@ body.gated .tabs, body.gated .ctx, body.gated #sync{display:none}
 .li-barato{color:var(--ok)}
 .card.barato{padding:12px 14px;margin-bottom:12px;line-height:1.45}
 .prod-loja{font-size:12px;opacity:.85}
+
+/* ===== visual Azulejo: sobrepõe-se às regras do caderno acima ===== */
+/* camada comum: desliga o caderno de hoje */
+body{background-image:none!important}
+.shell::before{display:none}
+.shell{padding-top:0}
+.banner{transform:none}
+.sticker{clip-path:none;transform:none}
+.sum,.day{outline:none}
+.brand-name{text-decoration:none;white-space:nowrap}
+.mono,.of,.stat .v,.li-price,.cmp .amt,.prow .pval,.tier,.day-h .dt,.day-h .dc,.receipt{font-variant-numeric:tabular-nums}
+.lbl,.set-h,.sum .eyebrow,.stat .k,.slot-l{letter-spacing:0}
+.top-acts .linkbtn{font-size:12px;line-height:1.3;max-width:6.5em;min-height:0}.brand{flex:1 1 auto}
+/* OPÇÃO 1 — AZULEJO: cobalto sobre vidrado branco; o padrão de azulejo é o único gesto forte */
+body{font:400 15.5px/1.5 var(--f-body);background:var(--bg)}
+.shell{border:0;border-radius:20px;box-shadow:0 1px 2px rgba(14,37,82,.08);overflow:hidden}
+.shell::before{display:block;content:"";height:44px;margin:0 -12px 14px;background:var(--tile) 0 0/44px 44px,var(--paper);border-bottom:3px solid var(--accent);border-radius:0}
+.brand-name{font:400 23px/1.1 var(--f-display);color:var(--ink)}
+.brand-sub{font:500 13.5px/1.2 var(--f-body);color:var(--ink-2);margin-top:4px}
+.lbl,.set-h,.stat .k,.slot-l,.sum .eyebrow{font:600 13px/1.25 var(--f-body);color:var(--ink-2)}
+.inp,.step{border:1px solid var(--line-d);border-radius:12px;background:var(--field)}
+.ctx{border-bottom:1px solid var(--line)}
+.h2{font:400 31px/1.05 var(--f-display);letter-spacing:-.01em}
+.sect{font:400 20px/1.2 var(--f-display);border-bottom:1px solid var(--line)}
+.vh .mono,.vh .muted{font:600 13px var(--f-body)}
+.card,.rcard,.pickrow{border:1px solid var(--line);border-radius:16px;box-shadow:none}
+.banner{background:var(--accent-soft);color:var(--ink);border-radius:14px;box-shadow:none;border-left:0}
+.banner .btn.ghost{color:var(--accent);border-color:var(--accent)}
+.big{font:400 50px/1 var(--f-display);letter-spacing:-.02em;color:var(--accent)}
+.of{font:600 14px var(--f-body)}
+.bar{height:8px;border:0;border-radius:4px}
+.stats{border-top:1px solid var(--line)}
+.stat .v{font:700 16px var(--f-body)}
+.day-h h3{font:400 23px/1.15 var(--f-display)}
+.day-h .dt,.day-h .dc{font:600 12.5px var(--f-body)}
+.meal{border-top:1px solid var(--rule)}
+.meal-n{font-weight:600}
+.sticker{background:var(--tag);color:var(--on-tag);font:800 17px/1 var(--f-body);padding:8px 11px;border-radius:10px}
+.sticker small{font:700 11px/1 var(--f-body)}
+.meal-main.is-empty{border:1.5px dashed var(--line-d);border-radius:12px}
+.rc-name{font:400 19px/1.2 var(--f-display)}
+.btn{border-radius:12px;box-shadow:none;border:1px solid var(--line-d);font:700 15px/1.2 var(--f-body)}
+.btn.pri,.btn.pri.sm{box-shadow:none}
+.btn.sm{box-shadow:none}
+.chip{border:1px solid var(--line-d)}
+.chip[aria-pressed="true"]{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.receipt{font:500 13.5px/1.5 var(--f-body);border-radius:14px;padding:0 16px 14px}
+.receipt .rh{font:400 17px/1.2 var(--f-display);color:var(--accent);border-bottom:2px solid var(--accent)}
+.tot{border-top:2px solid var(--ink)}
+.tot .ln.big-l .nm{font:400 19px/1 var(--f-display)}
+.sheet-h h2{font:400 25px/1.15 var(--f-display)}
+.sheet-panel{border-top:0;border-radius:24px 24px 0 0;box-shadow:0 -8px 30px rgba(10,20,48,.25)}
+.sheet-panel::before{content:"";display:block;height:14px;background:var(--tile) 0 0/28px 28px;border-radius:24px 24px 0 0;opacity:.9}
+.steps li::marker{font:400 17px var(--f-display);color:var(--accent)}
+.tabs{border-top:1px solid var(--line);box-shadow:none;background:var(--paper)}
+.tab span{font:600 12.5px/1 var(--f-body);padding:0}
+.tab svg{width:24px;height:24px}
+.tab[aria-current="page"] svg{background:var(--accent-soft);border-radius:999px;padding:3px 14px;width:52px;height:30px;box-sizing:border-box}
+.tab[aria-current="page"] span{background:none;color:var(--accent)}
+.src{font:700 11px/1 var(--f-body)}
+.toast{background:var(--ink);color:var(--paper)}
+.brand-name{font-size:21px}
+/* afinações: "Ver receita" numa só linha; número centrado nos contadores sem campo (porções) */
+.meal .linkbtn{white-space:nowrap}
+.step > span{display:flex;align-items:center;justify-content:center;font-weight:800}
 </style>
 <style>
   .top-acts { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
@@ -471,9 +541,9 @@ body.gated .tabs, body.gated .ctx, body.gated #sync{display:none}
 </div>
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="atualizar.js?v=33" defer></script>
-<script src="config.js?v=33"></script>
-<script src="app.bundle.js?v=33"></script>
+<script src="atualizar.js?v=34" defer></script>
+<script src="config.js?v=34"></script>
+<script src="app.bundle.js?v=34"></script>
 <div id="updBanner" role="status" hidden style="position:fixed;left:12px;right:12px;bottom:12px;z-index:50;background:#22293a;color:#fff;border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 24px rgba(0,0,0,.25);font:600 14px/1.3 system-ui,sans-serif">
   <span style="flex:1">Há uma versão nova da app.</span>
   <button type="button" id="updDepois" style="background:none;border:none;color:#fff;opacity:.8;font:inherit;min-height:44px;padding:0 8px">Mais tarde</button>
