@@ -415,7 +415,7 @@ body{background-image:none!important}
 .top-acts .linkbtn{font-size:12px;line-height:1.3;max-width:6.5em;min-height:0}.brand{flex:1 1 auto}
 /* OPÇÃO 1 — AZULEJO: cobalto sobre vidrado branco; o padrão de azulejo é o único gesto forte */
 body{font:400 15.5px/1.5 var(--f-body);background:var(--bg)}
-.shell{border:0;border-radius:20px;box-shadow:0 1px 2px rgba(14,37,82,.08);overflow:hidden}
+.shell{border:0;border-radius:20px;box-shadow:0 1px 2px rgba(14,37,82,.08);overflow:clip;--px:16px}
 .shell::before{display:block;content:"";height:44px;margin:0 -12px 14px;background:var(--tile) 0 0/44px 44px,var(--paper);border-bottom:3px solid var(--accent);border-radius:0}
 .brand-name{font:400 23px/1.1 var(--f-display);color:var(--ink)}
 .brand-sub{font:500 13.5px/1.2 var(--f-body);color:var(--ink-2);margin-top:4px}
@@ -465,6 +465,21 @@ body{font:400 15.5px/1.5 var(--f-body);background:var(--bg)}
 /* afinações: "Ver receita" numa só linha; número centrado nos contadores sem campo (porções) */
 .meal .linkbtn{white-space:nowrap}
 .step > span{display:flex;align-items:center;justify-content:center;font-weight:800}
+/* topo fixo: o cabeçalho com a faixa de azulejo fica preso no topo; ao descer encolhe (body.compact, posto em app.bundle.js) para não roubar ecrã */
+@media (min-width:560px){ .shell{--px:22px} }
+@media (max-width:560px){ .shell{--px:12px} }
+.shell::before{display:none}
+.top{position:sticky;top:0;z-index:15;margin:0 calc(-1 * var(--px));padding:63px var(--px) 10px;background:var(--paper);
+ transition:padding .2s ease, box-shadow .2s ease}
+.top::before{content:"";position:absolute;left:0;right:0;top:0;height:44px;background:var(--tile) 0 0/44px 44px,var(--paper);border-bottom:3px solid var(--accent);
+ transition:height .2s ease, background-position .2s ease}
+.brand-mark,.brand-name,.brand-sub{transition:all .2s ease}
+body.compact .top{padding-top:28px;padding-bottom:8px;box-shadow:0 8px 14px -12px var(--shadow)}
+body.compact .top::before{height:14px;background-position:0 -15px,0 0}
+body.compact .brand-mark{width:30px;height:30px}
+body.compact .brand-name{font-size:18px}
+body.compact .brand-sub{font-size:0;margin-top:0;opacity:0}
+@media (prefers-reduced-motion:reduce){ .top,.top::before,.brand-mark,.brand-name,.brand-sub{transition:none} }
 </style>
 <style>
   .top-acts { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
@@ -542,9 +557,9 @@ body{font:400 15.5px/1.5 var(--f-body);background:var(--bg)}
 </div>
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="atualizar.js?v=36" defer></script>
-<script src="config.js?v=36"></script>
-<script src="app.bundle.js?v=36"></script>
+<script src="atualizar.js?v=37" defer></script>
+<script src="config.js?v=37"></script>
+<script src="app.bundle.js?v=37"></script>
 <div id="updBanner" role="status" hidden style="position:fixed;left:12px;right:12px;bottom:12px;z-index:50;background:#22293a;color:#fff;border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 24px rgba(0,0,0,.25);font:600 14px/1.3 system-ui,sans-serif">
   <span style="flex:1">Há uma versão nova da app.</span>
   <button type="button" id="updDepois" style="background:none;border:none;color:#fff;opacity:.8;font:inherit;min-height:44px;padding:0 8px">Mais tarde</button>
