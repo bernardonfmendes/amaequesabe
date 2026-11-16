@@ -16,7 +16,7 @@ lê só páginas de categoria (sem pesquisa interna, paginação nem ordenação
 `regras.py` gera o SQL de `ingredientes_agente` (palavras obrigatórias, alternativas, exclusões e preço de referência).
 Um produto só é aceite se o preço por kg/l/un estiver entre 40 % e 250 % do preço de referência do ingrediente.
 Depois de escolher em cada loja, compara-se entre lojas: se o preço de uma loja passar 2,5 vezes o da loja mais cara
-das restantes, essa loja fica sem preço para esse ingrediente (a app usa a referência). Evita casos como salmão em
+das restantes e também o dobro do preço de referência, essa loja fica sem preço para esse ingrediente (a app usa a referência). Evita casos como salmão em
 porções de gama alta (32 €/kg) quando as outras lojas têm 9–11 €/kg. A resposta de `calcular` lista-os em `descartados`.
 Os ingredientes novos criados na app (`customIngs`) entram automaticamente, com palavras tiradas do nome.
 

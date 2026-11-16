@@ -274,15 +274,18 @@ Deno.serve(async (req) => {
       }
       // comparação entre lojas: como só se lê a 1.ª página de cada categoria, às vezes a única opção que aparece
       // numa loja é um produto de gama alta (ex.: salmão em porções a 32 €/kg contra 9–11 € nas outras).
-      // Se o preço de uma loja passar 2,5 vezes o da loja MAIS CARA das restantes, deixa-se essa loja sem preço
-      // para este ingrediente e a app usa a referência.
+      // Um preço só é posto de lado se passar 2,5 vezes o da loja MAIS CARA das restantes E, havendo preço de
+      // referência, também o dobro da referência. Assim não se apaga um preço barato verdadeiro (marca própria a
+      // 11,80 €/kg contra marca a 30,67 €/kg, ambos perto da referência de 21,75). A loja fica sem preço para esse
+      // ingrediente e a app usa a referência.
       const descartados: string[] = [];
       for (const ing of ings) {
         const lojasCom = Object.keys(res).filter((l) => res[l][ing.id]);
         if (lojasCom.length < 2) continue;
         for (const l of lojasCom) {
+          const b = res[l][ing.id].b;
           const maxOutras = Math.max(...lojasCom.filter((o) => o !== l).map((o) => res[o][ing.id].b));
-          if (res[l][ing.id].b > maxOutras * 2.5) descartados.push(l + ":" + ing.id);
+          if (b > maxOutras * 2.5 && (!ing.ref_base || b > ing.ref_base * 2)) descartados.push(l + ":" + ing.id);
         }
       }
       for (const d of descartados) { const [l, id] = d.split(":"); delete res[l][id]; n--; }
