@@ -100,11 +100,14 @@ export function lerPingoDoce(html: string): Prod[] {
     let d: any; try { d = JSON.parse(des(g[1])); } catch { continue; }
     const it = d?.items?.[0];
     if (!it?.item_id || !(Number(it.price) > 0)) continue;
-    const un = (parte.match(/class="product-unit">([\s\S]*?)<\/div>/) || [])[1] || "";
+    const un = semTags((parte.match(/class="product-unit">([\s\S]*?)<\/div>/) || [])[1] || "");
+    // produtos ao peso (peixe fresco, talho): a linha da unidade só traz o peso médio ("2.6 Kg") e o preço por kg
+    // vem no próprio preço ("9,99 €/Kg"); o primeiro €/kg do bloco é o preço atual (o riscado da promoção vem depois)
+    const pv = semTags((parte.match(/class="product-price[^"]*">([\s\S]*?)<\/div>/) || [])[1] || "");
     const href = (parte.match(/href="(\/home\/produtos\/[^"]+?\.html)"/) || [])[1];
     const p: Prod = { pid: String(it.item_id), nome: des(String(it.item_name)).trim(), preco: Number(it.price), qtd: null, unidade: null, preco_base: null,
       url: href ? "https://www.pingodoce.pt" + href : null };
-    completa(p, semTags(un), semTags(un));
+    completa(p, un, porUnidade(un) ? un : un + " " + pv);
     out.push(p);
   }
   return out;
