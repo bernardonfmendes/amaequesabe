@@ -272,9 +272,23 @@ Deno.serve(async (req) => {
         res[loja][ing.id] = { v, b: m.preco_base, p: m.nome, q: m.qtd, pr: m.preco, u: m.url };
         n++;
       }
-      return { res, n };
+      // comparação entre lojas: como só se lê a 1.ª página de cada categoria, às vezes a única opção que aparece
+      // numa loja é um produto de gama alta (ex.: salmão em porções a 32 €/kg contra 9–11 € nas outras).
+      // Se o preço de uma loja passar 2,5 vezes o da loja MAIS CARA das restantes, deixa-se essa loja sem preço
+      // para este ingrediente e a app usa a referência.
+      const descartados: string[] = [];
+      for (const ing of ings) {
+        const lojasCom = Object.keys(res).filter((l) => res[l][ing.id]);
+        if (lojasCom.length < 2) continue;
+        for (const l of lojasCom) {
+          const maxOutras = Math.max(...lojasCom.filter((o) => o !== l).map((o) => res[o][ing.id].b));
+          if (res[l][ing.id].b > maxOutras * 2.5) descartados.push(l + ":" + ing.id);
+        }
+      }
+      for (const d of descartados) { const [l, id] = d.split(":"); delete res[l][id]; n--; }
+      return { res, n, descartados };
     };
-    const { res: lojas, n: total } = procura(lista);
+    const { res: lojas, n: total, descartados } = procura(lista);
     const hoje = new Date().toISOString().slice(0, 10);
     let casasComPrecos = 0;
     for (const pc of porCasa) {
@@ -287,7 +301,7 @@ Deno.serve(async (req) => {
       ingredientes: lista.length, lojas };
     const { error } = await db.from("precos").upsert({ id: "lojas", state, saved_at: Date.now(), updated_by: "agente-precos" });
     if (error) return json({ erro: error.message }, 500);
-    return json({ ok: true, ingredientes: lista.length, precos: total, casasComPrecos,
+    return json({ ok: true, ingredientes: lista.length, precos: total, casasComPrecos, descartados,
       porLoja: Object.fromEntries(Object.entries(lojas).map(([k, v]) => [k, Object.keys(v).length])), produtosLidos: state.produtosLidos });
   }
   return json({ erro: "modo desconhecido" }, 400);
